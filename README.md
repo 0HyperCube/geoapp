@@ -23,7 +23,7 @@ Navigate to [localhost:8080](http://localhost:8080). You should see your app run
 
 If you're using [Visual Studio Code](https://code.visualstudio.com/) svelte recommends installing the official extension [Svelte for VS Code](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode). If you are using other editors you may need to install a plugin in order to get syntax highlighting and intellisense.
 
-To debug the local database, head to [localhost:4000](http://localhost:4000/database/geoclash-3ed30-default-rtdb/data).
+To debug the local database, head to [localhost:8085](http://localhost:8085/database/geoclash-3ed30-default-rtdb/data).
 
 ## Building and running in production mode
 

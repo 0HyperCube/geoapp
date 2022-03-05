@@ -30,7 +30,7 @@
 	const db = getDatabase(app);
 	if (location.hostname === "localhost") {
 		// Point to the RTDB emulator running on localhost.
-		connectDatabaseEmulator(db, "localhost", 9000);
+		connectDatabaseEmulator(db, "localhost", 8085);
 	}
 
 	set(ref(db, "users/" + "bob"), {
