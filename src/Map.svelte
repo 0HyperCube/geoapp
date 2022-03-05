@@ -1,8 +1,11 @@
 <script lang="ts">
-	import Countries from "./Countries.svelte";
+	import { paths, regions } from "./countries";
 	import { abs } from "mathjs";
 	import { fade } from "svelte/transition";
 	import { spring } from "svelte/motion";
+	import { RadioGroup, Radio } from "svelte-radio";
+
+	let path_entries = [...paths.entries()];
 
 	// Width of countries in svg
 	const countries_width = 1200;
@@ -42,6 +45,8 @@
 		}
 	}
 
+	let viewmode = "default";
+
 	// Is the user panning?
 	let panning = false;
 	// The position of the tooltip (springy)
@@ -70,7 +75,7 @@
 			has_transformed = true;
 
 			// An arbiery scroll speed (stolen from graphite)
-			const scroll_speed = 1 / 600;
+			const scroll_speed = 1 / 300;
 
 			let zoom = 1 + abs(event.deltaY) * scroll_speed;
 			if (event.deltaY > 0) {
@@ -118,12 +123,29 @@
 	function pointerUp() {
 		panning = false;
 	}
+	function fill(name: string, viewmode: string) {
+		// Normal fill
+		if (viewmode == "default") {
+			return "rgb(209, 219, 221)";
+		} else if (viewmode == "regions") {
+			return regions.get(name).colour;
+		} else {
+			return "rgb(55, 219, 22)";
+		}
+	}
 </script>
+
+<RadioGroup bind:value={viewmode} label="Radio group legend"
+	><span slot="legend" />
+	<Radio label="Default" value="default" />
+	<Radio label="Regions" value="regions" />
+	<Radio label="Green" value="green" />
+</RadioGroup>
 
 <div bind:clientWidth={svg_width} bind:clientHeight={svg_height}>
 	<svg
 		version="1.1"
-		id="map"
+		id="Map"
 		xmlns="http://www.w3.org/2000/svg"
 		preserveAspectRatio="xMinYMin"
 		class="map"
@@ -140,7 +162,17 @@
 			transform="scale({scale}) translate({translation_x},{translation_y})"
 			id="country-group"
 		>
-			<Countries />
+			{#each path_entries as [name, path]}
+				<path
+					id={name}
+					d={path}
+					style="fill: {fill(
+						name,
+						viewmode
+					)}; fill-opacity: 1; stroke: rgb(0, 0, 0); touch-action: none;"
+					stroke-width="0.2"
+				/>
+			{/each}
 		</g>
 	</svg>
 </div>
@@ -168,5 +200,18 @@
 		margin: 10px;
 		padding: 3px;
 		pointer-events: none;
+	}
+
+	:global(.svelte-radio-group) {
+		border: 0;
+		padding: 0;
+	}
+
+	:global(.svelte-radio) {
+		display: inline;
+	}
+
+	:global(.svelte-radio label) {
+		display: inline;
 	}
 </style>
