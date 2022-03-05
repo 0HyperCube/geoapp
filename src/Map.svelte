@@ -37,8 +37,8 @@
 			let x = svg_width / countries_width;
 			let y = svg_height / countries_height;
 			scale = Math.min(x, y);
-			translation_x = (svg_width - countries_width) / 2;
-			translation_y = (svg_height - countries_height) / 2;
+			translation_x = (svg_width - countries_width * scale) / (2 * scale);
+			translation_y = (svg_height - countries_height * scale) / (2 * scale);
 		}
 	}
 
@@ -66,6 +66,8 @@
 		if (event.ctrlKey) {
 			// Prevent the browser from zooming in the page
 			event.preventDefault();
+
+			has_transformed = true;
 
 			// An arbiery scroll speed (stolen from graphite)
 			const scroll_speed = 1 / 600;
@@ -97,6 +99,8 @@
 		if (panning) {
 			translation_x += event.movementX / scale;
 			translation_y += event.movementY / scale;
+
+			has_transformed = true;
 		}
 
 		if (
