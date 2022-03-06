@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Map from "./Map.svelte";
+	import Auth from "./Auth.svelte";
 
 	// Import the functions you need from the SDKs you need
 	import { initializeApp } from "firebase/app";
@@ -36,19 +37,10 @@
 	set(ref(db, "users/" + "bob"), {
 		troops: 45,
 	});
-
-	export let name: string;
-
-	let x = 66;
-	$: y = x * 2;
 </script>
 
 <main>
-	<h1>Hello {name}! {y}</h1>
-	<p>
-		Visit the <a href="https://svelte.dev/tutorial">Svelte tutorial</a> to learn
-		how to build Svelte apps.
-	</p>
+	<h1>Geoclash</h1>
 
 	<Map />
 </main>
