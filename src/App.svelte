@@ -72,7 +72,6 @@
 		</div>
 	</main>
 	<div class:map_expanded={!map_expanded} />
-	<footer class="card">Developed by Go Consulting</footer>
 </div>
 
 <style>
