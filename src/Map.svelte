@@ -135,7 +135,7 @@
 <div
 	bind:clientWidth={svg_width}
 	bind:clientHeight={svg_height}
-	style="flex-grow:1"
+	style="flex-grow:1;display: flex;flex-direction: column;"
 >
 	<svg
 		version="1.1"
@@ -185,7 +185,7 @@
 	}
 	.expanded-map {
 		aspect-ratio: auto;
-		height: calc(100% - 6px);
+		flex-grow: 1;
 		width: calc(100% - 4px);
 	}
 
