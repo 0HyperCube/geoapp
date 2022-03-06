@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { paths, regions } from "./countries";
 	import { abs } from "mathjs";
-	import { fade } from "svelte/transition";
-	import { spring } from "svelte/motion";
+
 	import { RadioGroup, Radio } from "svelte-radio";
+	import Tooltip from "./Tooltip.svelte";
 
 	let path_entries = [...paths.entries()];
+
+	export let expanded = false;
 
 	// Width of countries in svg
 	const countries_width = 1200;
@@ -19,11 +21,6 @@
 	// The height of the svg containing the countries
 	let svg_height = 1;
 
-	// If there is a tooltip being displayed
-	let tooltip_visible = false;
-	// The value tooltip being displayed
-	let tooltip: string;
-
 	// How zoomed in the user is
 	let scale = 1;
 	// Movement of countries on X
@@ -33,6 +30,11 @@
 
 	// If the user has transformed the viewport
 	let has_transformed = false;
+
+	// If there is a tooltip being displayed
+	let tooltip_visible = false;
+	// function to update tooltip location
+	let update_tooltip_location;
 
 	$: {
 		// Scale and centre the countries if the user is not moving the viewport
@@ -45,18 +47,10 @@
 		}
 	}
 
-	let viewmode = "default";
+	let viewmode = "regions";
 
 	// Is the user panning?
 	let panning = false;
-	// The position of the tooltip (springy)
-	let tooltip_coords = spring(
-		{ x: 50, y: 50 },
-		{
-			stiffness: 0.1,
-			damping: 0.5,
-		}
-	);
 
 	// Handle capturing the pointer and panning when pointer down
 	function pointerDown(event: PointerEvent) {
@@ -107,18 +101,7 @@
 
 			has_transformed = true;
 		}
-
-		if (
-			event.target instanceof SVGElement &&
-			event.target.parentElement.id === "country-group"
-		) {
-			tooltip = event.target.id.replaceAll("_", " ");
-			tooltip_visible = true;
-		} else {
-			tooltip_visible = false;
-		}
-
-		tooltip_coords.set({ x: event.pageX, y: event.pageY });
+		update_tooltip_location(event);
 	}
 	function pointerUp() {
 		panning = false;
@@ -126,7 +109,7 @@
 	function fill(name: string, viewmode: string) {
 		// Normal fill
 		if (viewmode == "default") {
-			return "rgb(209, 219, 221)";
+			return "rgb(134, 211, 162)";
 		} else if (viewmode == "regions") {
 			return regions.get(name).colour;
 		} else {
@@ -135,20 +118,30 @@
 	}
 </script>
 
-<RadioGroup bind:value={viewmode} label="Radio group legend"
-	><span slot="legend" />
-	<Radio label="Default" value="default" />
-	<Radio label="Regions" value="regions" />
-	<Radio label="Green" value="green" />
-</RadioGroup>
+<div class="options">
+	<RadioGroup bind:value={viewmode} label="Radio group legend"
+		><span slot="legend" style="padding-right:10px;">Viewmode:</span>
+		<Radio label="Default" value="default" />
+		<Radio label="Regions" value="regions" />
+		<Radio label="Green" value="green" />
+	</RadioGroup>
+	<button id="expand-button" on:click={() => (expanded = !expanded)}
+		>{expanded ? "Shrink" : "Expand"}</button
+	>
+</div>
 
-<div bind:clientWidth={svg_width} bind:clientHeight={svg_height}>
+<div
+	bind:clientWidth={svg_width}
+	bind:clientHeight={svg_height}
+	style="flex-grow:1"
+>
 	<svg
 		version="1.1"
 		id="Map"
 		xmlns="http://www.w3.org/2000/svg"
 		preserveAspectRatio="xMinYMin"
 		class="map"
+		class:expanded-map={expanded}
 		on:pointerdown={pointerDown}
 		on:pointermove={pointerMove}
 		on:pointerup={pointerUp}
@@ -158,6 +151,9 @@
 		}}
 		bind:this={svg_element}
 	>
+		<title
+			>{viewmode == "regions" ? "Map of regions" : "Map of the world"}</title
+		>
 		<g
 			transform="scale({scale}) translate({translation_x},{translation_y})"
 			id="country-group"
@@ -177,34 +173,24 @@
 	</svg>
 </div>
 
-{#if tooltip_visible}
-	<div
-		transition:fade
-		class="tooltip"
-		style="left:{$tooltip_coords.x}px; top:{$tooltip_coords.y}px;"
-	>
-		{tooltip}
-	</div>
-{/if}
+<Tooltip bind:tooltip_visible bind:update_tooltip_location />
 
 <style>
 	.map {
 		border: 1px solid grey;
 		width: 100%;
-		height: 50vh;
+		aspect-ratio: 1200/460;
 	}
-	.tooltip {
-		position: absolute;
-		background-color: blanchedalmond;
-		border-radius: 3px;
-		margin: 10px;
-		padding: 3px;
-		pointer-events: none;
+	.expanded-map {
+		aspect-ratio: auto;
+		height: calc(100% - 6px);
+		width: calc(100% - 4px);
 	}
 
 	:global(.svelte-radio-group) {
 		border: 0;
 		padding: 0;
+		display: inline;
 	}
 
 	:global(.svelte-radio) {
@@ -213,5 +199,10 @@
 
 	:global(.svelte-radio label) {
 		display: inline;
+	}
+
+	#expand-button {
+		height: min-content;
+		text-align: right;
 	}
 </style>
