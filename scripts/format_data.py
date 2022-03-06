@@ -7,6 +7,9 @@ with open("paths.txt") as f:
 with open("regions.txt") as f:
 	regions = json.load(f)
 
+with open("coastal.txt") as f:
+	coastal = json.load(f)
+
 result = "export let paths = new Map(["
 for val in paths.split("<path")[1:]:
 	id = val.split('id="')[1].split('"')[0]
@@ -23,6 +26,9 @@ for colour in regions["groups"]:
 		result += f'["{path}",{{colour: "{colour}", name: "{label}"}}],'
 result = result[:-1]
 result+="]);"
+
+result += f"export let coastal_regions = {coastal};"
+
 pyperclip.copy(result)
 
 with open("./../src/countries.ts", "w") as f:

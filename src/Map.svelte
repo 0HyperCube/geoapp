@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { paths, regions } from "./countries";
+	import { paths, regions, coastal_regions } from "./countries";
 	import { abs } from "mathjs";
 
 	import { RadioGroup, Radio } from "svelte-radio";
@@ -113,7 +113,9 @@
 		} else if (viewmode == "regions") {
 			return regions.get(name).colour;
 		} else {
-			return "rgb(55, 219, 22)";
+			return coastal_regions.includes(name)
+				? "rgb(60, 127, 255)"
+				: "rgb(134, 211, 162)";
 		}
 	}
 </script>
@@ -123,7 +125,7 @@
 		><span slot="legend" style="padding-right:10px;">Viewmode:</span>
 		<Radio label="Default" value="default" />
 		<Radio label="Regions" value="regions" />
-		<Radio label="Green" value="green" />
+		<Radio label="Coastal" value="coastal" />
 	</RadioGroup>
 	<button id="expand-button" on:click={() => (expanded = !expanded)}
 		>{expanded ? "Shrink" : "Expand"}</button
