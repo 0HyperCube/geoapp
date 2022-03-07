@@ -139,9 +139,10 @@
 >
 	<svg
 		version="1.1"
-		id="Map"
+		id="map"
 		xmlns="http://www.w3.org/2000/svg"
-		preserveAspectRatio="xMinYMin"
+		viewBox="{-translation_x} {-translation_y} {svg_width / scale} {svg_height /
+			scale}"
 		class="map"
 		class:expanded-map={expanded}
 		on:pointerdown={pointerDown}
@@ -156,22 +157,18 @@
 		<title
 			>{viewmode == "regions" ? "Map of regions" : "Map of the world"}</title
 		>
-		<g
-			transform="scale({scale}) translate({translation_x},{translation_y})"
-			id="country-group"
-		>
-			{#each path_entries as [name, path]}
-				<path
-					id={name}
-					d={path}
-					style="fill: {fill(
-						name,
-						viewmode
-					)}; fill-opacity: 1; stroke: rgb(0, 0, 0); touch-action: none;"
-					stroke-width="0.2"
-				/>
-			{/each}
-		</g>
+
+		{#each path_entries as [name, path]}
+			<path
+				id={name}
+				d={path}
+				style="fill: {fill(
+					name,
+					viewmode
+				)}; fill-opacity: 1; stroke: rgb(0, 0, 0); touch-action: none;"
+				stroke-width="0.2"
+			/>
+		{/each}
 	</svg>
 </div>
 

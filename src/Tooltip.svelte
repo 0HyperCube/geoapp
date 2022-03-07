@@ -18,7 +18,7 @@
 	export function update_tooltip_location(event: PointerEvent) {
 		if (
 			event.target instanceof SVGElement &&
-			event.target.parentElement.id === "country-group"
+			event.target.parentElement.id === "map"
 		) {
 			tooltip = event.target.id.replaceAll("_", " ");
 			tooltip_visible = true;
