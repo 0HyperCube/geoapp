@@ -1,42 +1,59 @@
 <script lang="ts">
-	import { getAuth, signInWithPopup, GithubAuthProvider } from "firebase/auth";
+	import {
+		getAuth,
+		signInWithPopup,
+		signOut,
+		GithubAuthProvider,
+		onAuthStateChanged,
+		User,
+	} from "firebase/auth";
+
+	export let on_login = (_user: User) => {};
 
 	const provider = new GithubAuthProvider();
 
 	let user_id = undefined;
+	export let logged_in = false;
+
+	export function init_auth() {
+		const auth = getAuth();
+
+		onAuthStateChanged(auth, (user) => {
+			if (user) {
+				on_login(user);
+				user_id = user.uid;
+				logged_in = true;
+			} else {
+				logged_in = false;
+			}
+		});
+	}
 
 	function login() {
 		const auth = getAuth();
 
-		signInWithPopup(auth, provider)
-			.then((result) => {
-				console.log(result);
-				// This gives you a GitHub Access Token. You can use it to access the GitHub API.
-				const credential = GithubAuthProvider.credentialFromResult(result);
-				const token = credential.accessToken;
+		signInWithPopup(auth, provider).catch((error) => {
+			alert(`Error logging in: ${error.errorCode}: ${error.errorMessage}`);
+		});
+	}
 
-				// The signed-in user info.
-				const user = result.user;
-				user_id = user.uid;
-				console.log(user.uid);
-				// ...
-			})
-			.catch((error) => {
-				// Handle Errors here.
-				const errorCode = error.code;
-				const errorMessage = error.message;
-				alert(`Error logging in: ${errorCode}: ${errorMessage}`);
-			});
+	function logout() {
+		const auth = getAuth();
+
+		signOut(auth).catch((error) => {
+			alert(`Error logging out: ${error.errorCode}: ${error.errorMessage}`);
+		});
 	}
 </script>
 
 <nav>
 	<span id="title">Geoclash Console</span>
-	{#if user_id}
+	{#if logged_in}
 		<span>{user_id}</span>
-	{:else}
-		<button on:click={login}>Login</button>
 	{/if}
+	<button on:click={logged_in ? logout : login}
+		>{logged_in ? "Logout" : "Login"}</button
+	>
 </nav>
 <div class="nav-spacer" />
 

@@ -9,8 +9,14 @@
 		getDatabase,
 		connectDatabaseEmulator,
 		set,
+		onValue,
 		ref,
+		Database,
 	} from "firebase/database";
+	import { onMount } from "svelte";
+	import type { User } from "firebase/auth";
+
+	let init_auth: () => void;
 
 	// TODO: Add SDKs for Firebase products that you want to use
 	// https://firebase.google.com/docs/web/setup#available-libraries
@@ -27,39 +33,54 @@
 		appId: "1:209915577232:web:bb5f14ccad37c8eb2f2915",
 	};
 
-	// Initialize Firebase
-	const app = initializeApp(firebaseConfig);
-	const db = getDatabase(app);
-	if (location.hostname === "localhost") {
-		// Point to the RTDB emulator running on localhost.
-		connectDatabaseEmulator(db, "localhost", 8085);
-	}
+	let db: Database;
 
-	// Extracts localhost:8080/?token=hello
-	let status = "";
-	const params = new URLSearchParams(window.location.search);
-	const token = params.get("token");
+	onMount(async () => {
+		// Initialize Firebase
+		const app = initializeApp(firebaseConfig);
+		db = getDatabase(app);
+		if (location.hostname === "localhost") {
+			// Point to the RTDB emulator running on localhost.
+			connectDatabaseEmulator(db, "localhost", 8085);
+		}
 
-	if (token) {
-		status = `Welcome, ${token}`;
-	} else {
-		status = "Please use your custom link to sign in.";
-	}
-
-	set(ref(db, "users/" + "bob"), {
-		troops: 45,
+		init_auth();
 	});
+
+	function new_user(user: User) {
+		set(ref(db, `users/${user.uid}`), {
+			gc: Math.random() * 100,
+			email: user.email,
+		});
+	}
+
+	let balance = 0;
+	let logged_in = false;
+
+	function on_login(user: User) {
+		const user_id = user.uid;
+		// set(ref(db, "users/" + "bob"), {
+		// 	troops: 45,
+		// });
+
+		onValue(ref(db, `users/${user_id}/gc`), (snapshot) => {
+			balance = snapshot.val() as number;
+			if (!balance) new_user(user);
+		});
+	}
 
 	let map_expanded = false;
 </script>
 
 <div class="document">
-	<Nav />
+	<Nav bind:init_auth {on_login} bind:logged_in />
 	<main class:map_expanded>
-		{#if !map_expanded}
+		{#if !map_expanded && logged_in}
 			<h2>Finance</h2>
 			<div class="card">
-				<Units />
+				<table>
+					<tr><td>Balance</td><td>{balance}</td></tr>
+				</table>
 			</div>
 			<h2>Units</h2>
 			<div class="card">
@@ -85,6 +106,10 @@
 		min-height: 100%;
 
 		margin: 0;
+	}
+
+	td {
+		padding-right: 100px;
 	}
 
 	main {

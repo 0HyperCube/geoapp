@@ -33,7 +33,7 @@
 </table>
 
 <style>
-	table {
-		width: 100%;
+	td {
+		padding-right: 100px;
 	}
 </style>
