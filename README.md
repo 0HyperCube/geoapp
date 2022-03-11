@@ -16,7 +16,14 @@ npm install
 ...then start [Rollup](https://rollupjs.org) and the [firebase emulator](https://firebase.google.com/docs/emulator-suite):
 
 ```bash
-firebase emulators:start --only "database,auth" & npm run dev && fg
+npm run dev & firebase emulators:start --only "database,auth" && fg
+```
+
+or via `run.sh`
+
+```bash
+chmod a+x run.sh
+./run.sh
 ```
 
 Navigate to [localhost:8080](http://localhost:8080). You should see your app running. Edit a component file in `src`, save it, and reload the page to see your changes.
