@@ -76,9 +76,13 @@ function on_login() {
 	// });
 
 	onValue(ref(db, `users/${user_id}/gc`), (snapshot) => {
-		balance.set(snapshot.val() as number);
-		if (!balance) new_user();
+		let new_balance = snapshot.val() as number;
+		balance.set(new_balance);
+		if (!new_balance) new_user();
 	});
+}
+
+function on_load() {
 	onValue(ref(db, `territories`), (snapshot) => {
 		let new_territory_colours = new Map();
 		let new_province_owners = new Map();
@@ -131,4 +135,5 @@ export function initalise_database() {
 		connectDatabaseEmulator(db, "localhost", 8085);
 	}
 	init_auth();
+	on_load();
 }
