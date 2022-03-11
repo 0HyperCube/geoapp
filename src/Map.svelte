@@ -39,7 +39,7 @@
 	let update_tooltip_location;
 
 	let modal_open = false;
-	let province: string;
+	let province = "";
 
 	$: {
 		// Scale and centre the countries if the user is not moving the viewport
@@ -61,7 +61,6 @@
 	// Handle capturing the pointer and panning when pointer down
 	function pointerDown(event: PointerEvent) {
 		if (event.button !== 2) {
-			svg_element.setPointerCapture(event.pointerId);
 			panning = true;
 			dragging = false;
 		}
@@ -103,6 +102,7 @@
 
 	function pointerMove(event: PointerEvent) {
 		if (panning) {
+			svg_element.setPointerCapture(event.pointerId);
 			translation_x += event.movementX / scale;
 			translation_y += event.movementY / scale;
 
