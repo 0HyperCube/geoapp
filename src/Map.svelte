@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { paths, regions, coastal_regions } from "./countries";
-	import { abs } from "mathjs";
+	import { user_territory_colours, province_owners } from "./database";
+	import math, { abs } from "mathjs";
 
 	import { RadioGroup, Radio } from "svelte-radio";
 	import Tooltip from "./Tooltip.svelte";
+	import Modal from "./Modal.svelte";
 
 	let path_entries = [...paths.entries()];
 
@@ -36,6 +38,9 @@
 	// function to update tooltip location
 	let update_tooltip_location;
 
+	let modal_open = false;
+	let province: string;
+
 	$: {
 		// Scale and centre the countries if the user is not moving the viewport
 		if (!has_transformed) {
@@ -47,16 +52,18 @@
 		}
 	}
 
-	let viewmode = "regions";
+	let viewmode = "users";
 
 	// Is the user panning?
 	let panning = false;
 
+	let dragging = false;
 	// Handle capturing the pointer and panning when pointer down
 	function pointerDown(event: PointerEvent) {
 		if (event.button !== 2) {
 			svg_element.setPointerCapture(event.pointerId);
 			panning = true;
+			dragging = false;
 		}
 	}
 
@@ -99,23 +106,40 @@
 			translation_x += event.movementX / scale;
 			translation_y += event.movementY / scale;
 
+			dragging = true;
+
 			has_transformed = true;
 		}
 		update_tooltip_location(event);
 	}
-	function pointerUp() {
-		panning = false;
+	function pointerUp(event: MouseEvent) {
+		update_tooltip_location(event);
+		if (event.button !== 2) {
+			panning = false;
+			if (!dragging) {
+				console.log(province);
+				if (province) {
+					modal_open = true;
+				}
+			}
+		}
 	}
-	function fill(name: string, viewmode: string) {
+	function fill(name: string, viewmode: string, owner: string) {
 		// Normal fill
 		if (viewmode == "default") {
 			return "rgb(134, 211, 162)";
 		} else if (viewmode == "regions") {
 			return regions.get(name).colour;
-		} else {
+		} else if (viewmode == "coastal") {
 			return coastal_regions.includes(name)
 				? "rgb(60, 127, 255)"
 				: "rgb(134, 211, 162)";
+		} else {
+			if (owner) {
+				return $user_territory_colours.get(owner);
+			} else {
+				return "rgb(50,50,50)";
+			}
 		}
 	}
 </script>
@@ -126,6 +150,7 @@
 		<Radio label="Default" value="default" />
 		<Radio label="Regions" value="regions" />
 		<Radio label="Coastal" value="coastal" />
+		<Radio label="Users" value="users" />
 	</RadioGroup>
 	<button id="expand-button" on:click={() => (expanded = !expanded)}
 		>{expanded ? "Shrink" : "Expand"}</button
@@ -147,16 +172,14 @@
 		class:expanded-map={expanded}
 		on:pointerdown={pointerDown}
 		on:pointermove={pointerMove}
-		on:pointerup={pointerUp}
+		on:click={pointerUp}
 		on:wheel={scroll}
 		on:mouseleave={() => {
 			tooltip_visible = false;
 		}}
 		bind:this={svg_element}
 	>
-		<title
-			>{viewmode == "regions" ? "Map of regions" : "Map of the world"}</title
-		>
+		<title />
 
 		{#each path_entries as [name, path]}
 			<path
@@ -164,7 +187,8 @@
 				d={path}
 				style="fill: {fill(
 					name,
-					viewmode
+					viewmode,
+					$province_owners.get(name)
 				)}; fill-opacity: 1; stroke: rgb(0, 0, 0); touch-action: none;"
 				stroke-width="0.2"
 			/>
@@ -172,7 +196,9 @@
 	</svg>
 </div>
 
-<Tooltip bind:tooltip_visible bind:update_tooltip_location />
+<Tooltip bind:tooltip_visible bind:update_tooltip_location bind:province />
+
+<Modal bind:modal_open bind:province {regions} {coastal_regions} />
 
 <style>
 	.map {

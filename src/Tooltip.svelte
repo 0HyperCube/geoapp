@@ -2,10 +2,12 @@
 	import { fade } from "svelte/transition";
 	import { spring } from "svelte/motion";
 
+	export {};
+
 	// If there is a tooltip being displayed
 	export let tooltip_visible = false;
 	// The value tooltip being displayed
-	let tooltip: string;
+	export let province: string;
 	// The position of the tooltip (springy)
 	let tooltip_coords = spring(
 		{ x: 50, y: 50 },
@@ -20,9 +22,10 @@
 			event.target instanceof SVGElement &&
 			event.target.parentElement.id === "map"
 		) {
-			tooltip = event.target.id.replaceAll("_", " ");
+			province = event.target.id;
 			tooltip_visible = true;
 		} else {
+			province = undefined;
 			tooltip_visible = false;
 		}
 
@@ -36,14 +39,14 @@
 		class="tooltip"
 		style="left:{$tooltip_coords.x}px; top:{$tooltip_coords.y}px;"
 	>
-		{tooltip}
+		{province.replaceAll("_", " ")}
 	</div>
 {/if}
 
 <style>
 	.tooltip {
 		position: absolute;
-		background-color: #1b1a19;
+		background-color: var(--page-colour);
 		border-radius: 3px;
 		margin: 10px;
 		padding: 3px;

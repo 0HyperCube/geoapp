@@ -69,6 +69,7 @@ button:hover {
 	border: 1px solid rgb(125, 125, 125);
 }
 
-button:focus {
-	border-color: #666;
+:focus {
+	outline: 2px solid rgb(134, 211, 162);
+	outline-offset: 2px;
 }

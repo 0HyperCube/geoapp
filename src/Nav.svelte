@@ -1,61 +1,20 @@
 <script lang="ts">
-	import {
-		getAuth,
-		signInWithPopup,
-		signOut,
-		GithubAuthProvider,
-		onAuthStateChanged,
-		User,
-	} from "firebase/auth";
+	import { logged_in, user_id, login, logout } from "./database";
 
-	export let on_login = (_user: User) => {};
-
-	const provider = new GithubAuthProvider();
-
-	let user_id = undefined;
-	export let logged_in = false;
-
-	export function init_auth() {
-		const auth = getAuth();
-
-		onAuthStateChanged(auth, (user) => {
-			if (user) {
-				on_login(user);
-				user_id = user.uid;
-				logged_in = true;
-			} else {
-				logged_in = false;
-			}
-		});
-	}
-
-	function login() {
-		const auth = getAuth();
-
-		signInWithPopup(auth, provider).catch((error) => {
-			alert(`Error logging in: ${error.errorCode}: ${error.errorMessage}`);
-		});
-	}
-
-	function logout() {
-		const auth = getAuth();
-
-		signOut(auth).catch((error) => {
-			alert(`Error logging out: ${error.errorCode}: ${error.errorMessage}`);
-		});
-	}
+	let nav: HTMLElement;
+	let spacer_height = 0;
 </script>
 
-<nav>
+<nav bind:clientHeight={spacer_height}>
 	<span id="title">Geoclash Console</span>
-	{#if logged_in}
-		<span>{user_id}</span>
+	{#if $logged_in}
+		<span>{$user_id}</span>
 	{/if}
-	<button on:click={logged_in ? logout : login}
-		>{logged_in ? "Logout" : "Login"}</button
+	<button on:click={$logged_in ? logout : login}
+		>{$logged_in ? "Logout" : "Login"}</button
 	>
 </nav>
-<div class="nav-spacer" />
+<div style="height:{spacer_height}px" />
 
 <style>
 	nav {
@@ -64,9 +23,6 @@
 		display: flex;
 		position: fixed;
 		width: 100%;
-	}
-	.nav-spacer {
-		height: 62px;
 	}
 	span {
 		color: rgb(134, 211, 162);
