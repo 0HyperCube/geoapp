@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { getDatabase, push, ref } from "firebase/database";
 
-	import { user_id, db } from "./database";
+	import { user_id, db, logged_in } from "./database";
 	import { scale, fade } from "svelte/transition";
 
 	export let modal_open = false;
@@ -65,7 +65,9 @@
 			<p>Region: {regions.get(province).name}</p>
 			<p>{coastal ? "Coastal" : "Inland"}</p>
 			<div class="actions">
-				<button on:click={conquor}>Conquor</button>
+				{#if $logged_in}
+					<button on:click={conquor}>Conquor</button>
+				{/if}
 				<button on:click={close_modal} bind:this={focus_element}>Close</button>
 			</div>
 		</div>
