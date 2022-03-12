@@ -34,6 +34,6 @@
 
 <style>
 	td {
-		padding-right: 100px;
+		width: 180px;
 	}
 </style>

@@ -5,7 +5,8 @@
 
 	import { onMount } from "svelte";
 
-	import { initalise_database, logged_in, balance } from "./database";
+	import { initalise_database, logged_in } from "./database";
+	import Finance from "./Finance.svelte";
 
 	onMount(async () => {
 		initalise_database();
@@ -20,9 +21,7 @@
 		{#if !map_expanded && $logged_in}
 			<h2>Finance</h2>
 			<div class="card">
-				<table>
-					<tr><td>Balance</td><td>{$balance}</td></tr>
-				</table>
+				<Finance />
 			</div>
 			<h2>Units</h2>
 			<div class="card">
@@ -52,10 +51,6 @@
 		min-height: 100%;
 
 		margin: 0;
-	}
-
-	td {
-		padding-right: 100px;
 	}
 
 	main {

@@ -41,8 +41,10 @@ export let user_id = writable("");
 export let logged_in = writable(false);
 
 export let balance = writable(0);
+export let development_level = writable(0);
 export let province_owners = writable(new Map());
 export let user_territory_colours = writable(new Map());
+export let owned_provinces_count = writable(0);
 
 const provider = new GithubAuthProvider();
 
@@ -66,6 +68,7 @@ function new_user() {
 	set(ref(db, `users/${user.uid}`), {
 		gc: Math.random() * 100,
 		email: user.email,
+		development_level: 0,
 	});
 }
 
@@ -79,6 +82,17 @@ function on_login() {
 		let new_balance = snapshot.val() as number;
 		balance.set(new_balance);
 		if (!new_balance) new_user();
+	});
+
+	let development_ref = ref(db, `users/${user_id}/development_level`);
+	onValue(development_ref, (snapshot) => {
+		let new_development_level = snapshot.val() as number;
+		development_level.set(new_development_level);
+		if (!new_development_level) set(development_ref, 0);
+	});
+
+	onValue(ref(db, `territories/${user_id}/provinces`), (snapshot) => {
+		owned_provinces_count.set(snapshot.size);
 	});
 }
 
