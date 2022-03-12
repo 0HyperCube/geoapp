@@ -1,10 +1,15 @@
 {
 	"[svelte]": {
 		"editor.defaultFormatter": "svelte.svelte-vscode"
-	},"[json]": {
-		"editor.defaultFormatter": "esbenp.prettier-vscode"
-	},"[typescript]": {
+	},
+	"[json]": {
 		"editor.defaultFormatter": "esbenp.prettier-vscode"
 	},
-	"editor.formatOnSave": true
+	"[typescript]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"editor.formatOnSave": true,
+	"files.associations": {
+		"*.json": "jsonc"
+	}
 }
