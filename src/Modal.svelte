@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { getDatabase, push, ref } from "firebase/database";
+	import { push, ref } from "firebase/database";
 
-	import { user_id, db, logged_in } from "./database";
+	import { user_id, db, logged_in, province_owners } from "./database";
 	import { scale, fade } from "svelte/transition";
+	import { province_neighbours } from "./countries";
 
 	export let modal_open = false;
 	export let province = "";
@@ -12,6 +13,7 @@
 	let modal_el: HTMLElement;
 	let focus_element: HTMLElement;
 	$: coastal = coastal_regions.includes(province);
+	$: owner = $province_owners.get(province);
 
 	function inside_modal(el: EventTarget): boolean {
 		if (el instanceof Node) return modal_el.contains(el);
@@ -32,6 +34,35 @@
 	}
 	function conquor() {
 		push(ref(db, `territories/${$user_id}/provinces`), province);
+	}
+	function explore() {
+		let explore_from = [province];
+		let discovered_count = 0;
+		while (explore_from.length > 0 && discovered_count < 4) {
+			province_neighbours.get(explore_from.pop()).forEach((new_province) => {
+				if (discovered_count < 4 && !$province_owners.get(new_province)) {
+					explore_from.push(new_province);
+					push(ref(db, `territories/${$user_id}/provinces`), new_province);
+					discovered_count += 1;
+				}
+			});
+		}
+	}
+	function count_exploration(
+		province: string,
+		province_owners: Map<string, string>
+	) {
+		let explore_from = [province];
+		let discovered_count = 0;
+		while (explore_from.length > 0 && discovered_count < 4) {
+			province_neighbours.get(explore_from.pop()).forEach((new_province) => {
+				if (discovered_count < 4 && !province_owners.get(new_province)) {
+					explore_from.push(new_province);
+					discovered_count += 1;
+				}
+			});
+		}
+		return discovered_count;
 	}
 
 	$: {
@@ -63,10 +94,16 @@
 		<div class="content-wrapper" bind:this={modal_el}>
 			<h1>{province.replaceAll("_", " ")} Province</h1>
 			<p>Region: {regions.get(province).name}</p>
-			<p>{coastal ? "Coastal" : "Inland"}</p>
+			<p>{coastal ? "Coastal" : "Landlocked"}</p>
+			<p>Owner: {owner ? owner : "None"}</p>
 			<div class="actions">
-				{#if $logged_in}
-					<button on:click={conquor}>Conquor</button>
+				{#if $logged_in && !owner && coastal}
+					<button on:click={conquor}>Explore via sea</button>
+				{/if}
+				{#if $logged_in && owner === $user_id}
+					<button on:click={explore}
+						>Scout {count_exploration(province, $province_owners)} neighbours</button
+					>
 				{/if}
 				<button on:click={close_modal} bind:this={focus_element}>Close</button>
 			</div>

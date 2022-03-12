@@ -97,6 +97,7 @@ function on_load() {
 					255
 				)},${randomInt(0, 255)})`;
 				set(ref(db, `territories/${territory_owner}/colour`), new_colour);
+				new_territory_colours.set(territory_owner, new_colour);
 			}
 			d.child("provinces").forEach((province) => {
 				new_province_owners.set(province.val(), territory_owner);
