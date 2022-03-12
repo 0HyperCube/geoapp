@@ -5,7 +5,7 @@
 
 	import { RadioGroup, Radio } from "svelte-radio";
 	import Tooltip from "./Tooltip.svelte";
-	import Modal from "./Modal.svelte";
+	import CountryModal from "./CountryModal.svelte";
 
 	let path_entries = [...paths.entries()];
 
@@ -198,7 +198,7 @@
 
 <Tooltip bind:tooltip_visible bind:update_tooltip_location bind:province />
 
-<Modal bind:modal_open bind:province {regions} {coastal_regions} />
+<CountryModal bind:modal_open bind:province {regions} {coastal_regions} />
 
 <style>
 	.map {
