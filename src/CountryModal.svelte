@@ -63,7 +63,9 @@
 			<button on:click={conquor}>Explore via sea</button>
 		{/if}
 		{#if $logged_in && owner === $user_id && scoutable > 0}
-			<button on:click={explore}>Scout {scoutable} neighbours</button>
+			<button on:click={explore}
+				>Scout {scoutable} neighbour{scoutable == 1 ? "" : "s"}</button
+			>
 		{/if}
 	</span>
 </Modal>
