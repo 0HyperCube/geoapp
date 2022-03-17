@@ -108,25 +108,25 @@ function on_login() {
 		let last_update = snapshot.val() as number;
 		if (last_update) {
 			let delta = days - last_update;
-			console.log(delta);
+			if (delta > 0) {
+				let updates = {};
+				updates[`meta/last_payent`] = days;
 
-			let updates = {};
-			updates[`meta/last_payent`] = days;
+				let development_levels = await get(ref(db, `development_levels`));
+				development_levels.forEach((child) => {
+					let development_level = child.val() || 0;
 
-			let development_levels = await get(ref(db, `development_levels`));
-			development_levels.forEach((child) => {
-				let development_level = child.val() || 0;
+					let user = child.key;
+					let provinces = internal_provinces_count.get(user) || 0;
 
-				let user = child.key;
-				let provinces = internal_provinces_count.get(user) || 0;
+					updates[`users/${user}/gc`] = increment(
+						(10 + development_level) * provinces * delta
+					);
+					updates[`actions/${user}`] = 5;
+				});
 
-				updates[`users/${user}/gc`] = increment(
-					(10 + development_level) * provinces * delta
-				);
-				updates[`actions/${user}`] = 5;
-			});
-
-			update(ref(db), updates);
+				update(ref(db), updates);
+			}
 		} else {
 			set(last_ref, days);
 		}

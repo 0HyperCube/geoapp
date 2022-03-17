@@ -109,6 +109,7 @@
 		display: flex;
 		flex-direction: row;
 		justify-content: flex-end;
+		align-items: center;
 		margin-top: 7px;
 	}
 	button {

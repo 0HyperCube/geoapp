@@ -76,6 +76,9 @@
 				>Scout {scoutable} neighbour{scoutable == 1 ? "" : "s"}</button
 			>
 		{/if}
+		{#if $actions === 0}
+			<span class="button-like">No actions left</span>
+		{/if}
 	</span>
 </Modal>
 
@@ -83,7 +86,8 @@
 	p {
 		margin: 0;
 	}
-	button {
+	button,
+	.button-like {
 		margin: 5px;
 	}
 </style>
