@@ -62,7 +62,7 @@
 	<div slot="conent">
 		{#if within_max}
 			<p>Current development level: {$development_level}</p>
-			<p>Upgrade cost {upgrade_cost}gc</p>
+			<p>Upgrade cost: {upgrade_cost}gc</p>
 		{:else}
 			<p>You are at the max development level of {MAX_LEVEL}</p>
 			<p>Upgrade your income further by invading new provinces.</p>
