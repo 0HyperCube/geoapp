@@ -7,6 +7,9 @@ import {
 	onValue,
 	ref,
 	Database,
+	update,
+	increment,
+	get,
 } from "firebase/database";
 import {
 	getAuth,
@@ -18,7 +21,7 @@ import {
 } from "firebase/auth";
 
 import { writable } from "svelte/store";
-import { randomInt } from "mathjs";
+import { floor, randomInt } from "mathjs";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -42,9 +45,11 @@ export let logged_in = writable(false);
 
 export let balance = writable(0);
 export let development_level = writable(0);
-export let province_owners = writable(new Map());
-export let user_territory_colours = writable(new Map());
-export let owned_provinces_count = writable(0);
+export let actions = writable(0);
+export let province_owners = writable(new Map<string, string>());
+export let user_territory_colours = writable(new Map<string, string>());
+let internal_provinces_count = new Map<string, number>();
+export let provinces_count = writable(new Map<string, number>());
 
 const provider = new GithubAuthProvider();
 
@@ -66,17 +71,13 @@ export function logout() {
 
 function new_user() {
 	set(ref(db, `users/${user.uid}`), {
-		gc: Math.random() * 100,
+		gc: 0,
 		email: user.email,
-		development_level: 0,
 	});
 }
 
 function on_login() {
 	const user_id = user.uid;
-	// set(ref(db, "users/" + "bob"), {
-	// 	troops: 45,
-	// });
 
 	onValue(ref(db, `users/${user_id}/gc`), (snapshot) => {
 		let new_balance = snapshot.val() as number;
@@ -84,15 +85,51 @@ function on_login() {
 		if (!new_balance) new_user();
 	});
 
-	let development_ref = ref(db, `users/${user_id}/development_level`);
+	let development_ref = ref(db, `development_levels/${user_id}`);
 	onValue(development_ref, (snapshot) => {
 		let new_development_level = snapshot.val() as number;
-		development_level.set(new_development_level);
-		if (!new_development_level) set(development_ref, 0);
+
+		if (new_development_level === null) set(development_ref, 0);
+		else development_level.set(new_development_level || 0);
 	});
 
-	onValue(ref(db, `territories/${user_id}/provinces`), (snapshot) => {
-		owned_provinces_count.set(snapshot.size);
+	let actions_ref = ref(db, `actions/${user_id}`);
+	onValue(actions_ref, (snapshot) => {
+		let new_actions = snapshot.val() as number;
+
+		if (new_actions === null) set(actions_ref, 5);
+		else actions.set(new_actions);
+	});
+
+	let last_ref = ref(db, `meta/last_payent`);
+	onValue(last_ref, async (snapshot) => {
+		// Gets the days since the unix epoch
+		let days = floor(new Date().getTime() / (1000 * 60 * 60 * 24));
+		let last_update = snapshot.val() as number;
+		if (last_update) {
+			let delta = days - last_update;
+			console.log(delta);
+
+			let updates = {};
+			updates[`meta/last_payent`] = days;
+
+			let development_levels = await get(ref(db, `development_levels`));
+			development_levels.forEach((child) => {
+				let development_level = child.val() || 0;
+
+				let user = child.key;
+				let provinces = internal_provinces_count.get(user) || 0;
+
+				updates[`users/${user}/gc`] = increment(
+					(10 + development_level) * provinces * delta
+				);
+				updates[`actions/${user}`] = 5;
+			});
+
+			update(ref(db), updates);
+		} else {
+			set(last_ref, days);
+		}
 	});
 }
 
@@ -100,10 +137,14 @@ function on_load() {
 	onValue(ref(db, `territories`), (snapshot) => {
 		let new_territory_colours = new Map();
 		let new_province_owners = new Map();
-		snapshot.forEach((d) => {
-			let territory_owner = d.key;
-			console.log(territory_owner);
-			let inf = d.val();
+		internal_provinces_count = new Map();
+		snapshot.forEach((snapshot) => {
+			let territory_owner = snapshot.key;
+			let provinces = snapshot.child("provinces");
+
+			internal_provinces_count.set(territory_owner, provinces.size);
+
+			let inf = snapshot.val();
 			if (inf.colour) new_territory_colours.set(territory_owner, inf.colour);
 			else {
 				let new_colour = `rgb(${randomInt(0, 255)},${randomInt(
@@ -113,14 +154,20 @@ function on_load() {
 				set(ref(db, `territories/${territory_owner}/colour`), new_colour);
 				new_territory_colours.set(territory_owner, new_colour);
 			}
-			d.child("provinces").forEach((province) => {
+
+			provinces.forEach((province) => {
 				new_province_owners.set(province.val(), territory_owner);
 			});
 		});
 		console.log(new_province_owners);
 		user_territory_colours.set(new_territory_colours);
 		province_owners.set(new_province_owners);
+		provinces_count.set(internal_provinces_count);
 	});
+}
+
+export function use_action() {
+	set(ref(db, `actions/${user.uid}`), increment(-1));
 }
 
 function init_auth() {

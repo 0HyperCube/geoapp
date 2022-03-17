@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { logged_in, user_id, login, logout } from "./database";
+	import { logged_in, user_id, login, logout, actions } from "./database";
 
 	let nav: HTMLElement;
 	let spacer_height = 0;
@@ -9,6 +9,7 @@
 	<span id="title">Geoclash Console</span>
 	{#if $logged_in}
 		<span>{$user_id}</span>
+		<span>Actions: {$actions}</span>
 	{/if}
 	<button on:click={$logged_in ? logout : login}
 		>{$logged_in ? "Logout" : "Login"}</button
@@ -26,7 +27,7 @@
 	}
 	span {
 		color: rgb(134, 211, 162);
-		font-size: 26px;
+		font-size: 22px;
 		font-weight: 100;
 		margin: 15px;
 	}

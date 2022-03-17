@@ -1,7 +1,14 @@
 <script lang="ts">
 	import { push, ref } from "firebase/database";
 
-	import { user_id, db, logged_in, province_owners } from "./database";
+	import {
+		user_id,
+		db,
+		logged_in,
+		province_owners,
+		actions,
+		use_action,
+	} from "./database";
 	import { province_neighbours } from "./countries";
 	import Modal from "./Modal.svelte";
 
@@ -16,9 +23,11 @@
 	$: scoutable = count_exploration(province, $province_owners);
 
 	function conquor() {
+		use_action();
 		push(ref(db, `territories/${$user_id}/provinces`), province);
 	}
 	function explore() {
+		use_action();
 		let explore_from = [province];
 		let discovered_count = 0;
 		while (explore_from.length > 0 && discovered_count < 4) {
@@ -59,10 +68,10 @@
 		<p>Owner: {owner ? owner : "None"}</p>
 	</div>
 	<span slot="action">
-		{#if $logged_in && !owner && coastal}
+		{#if $logged_in && !owner && coastal && $actions > 0}
 			<button on:click={conquor}>Explore via sea</button>
 		{/if}
-		{#if $logged_in && owner === $user_id && scoutable > 0}
+		{#if $logged_in && owner === $user_id && scoutable > 0 && $actions > 0}
 			<button on:click={explore}
 				>Scout {scoutable} neighbour{scoutable == 1 ? "" : "s"}</button
 			>
