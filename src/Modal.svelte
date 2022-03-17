@@ -72,6 +72,7 @@
 		left: 0;
 		right: 0;
 		background-color: rgba(0, 0, 0, 0.4);
+		z-index: 5;
 	}
 
 	.modal {
@@ -85,6 +86,7 @@
 		justify-content: center;
 		align-items: center;
 		opacity: 1;
+		z-index: 5;
 	}
 	div.content-wrapper {
 		z-index: 10;
