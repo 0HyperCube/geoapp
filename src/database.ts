@@ -22,6 +22,7 @@ import {
 
 import { writable } from "svelte/store";
 import { floor, randomInt } from "mathjs";
+import { coastal_regions } from "./countries";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -50,6 +51,36 @@ export let province_owners = writable(new Map<string, string>());
 export let user_territory_colours = writable(new Map<string, string>());
 let internal_provinces_count = new Map<string, number>();
 export let provinces_count = writable(new Map<string, number>());
+export let coastal_provinces_count = writable(new Map<string, number>());
+export let owned_units = writable(new Map<string, number>());
+export let unit_limits = writable({ total_army: 0, total_naval_army: 0 });
+
+export const unit_values = new Map([
+	[
+		"Infantry",
+		{ cost: 10, attack_power: 1, force_limit: 2, requires_coast: false },
+	],
+	[
+		"Vehicular",
+		{ cost: 25, attack_power: 2, force_limit: 1, requires_coast: false },
+	],
+	[
+		"Tank",
+		{ cost: 50, attack_power: 5, force_limit: 0.2, requires_coast: false },
+	],
+	[
+		"Naval",
+		{ cost: 200, attack_power: 10, force_limit: 0.5, requires_coast: true },
+	],
+	[
+		"Airborne",
+		{ cost: 250, attack_power: 25, force_limit: 0.1, requires_coast: false },
+	],
+	[
+		"Submarine",
+		{ cost: 500, attack_power: 25, force_limit: 0.05, requires_coast: true },
+	],
+]);
 
 const provider = new GithubAuthProvider();
 
@@ -101,6 +132,33 @@ function on_login() {
 		else actions.set(new_actions);
 	});
 
+	let units_ref = ref(db, `units/${user_id}`);
+	onValue(units_ref, (snapshot) => {
+		let new_units = snapshot.val();
+		console.log(new_units);
+		if (new_units !== null) {
+			let new_units_map = new Map<string, number>();
+			snapshot.forEach((child) => {
+				new_units_map.set(child.key, child.val());
+			});
+
+			let total_army = 0;
+			let total_naval_army = 0;
+			new_units_map.forEach((count, unit) => {
+				let unit_value = unit_values.get(unit);
+				let total_provinces = count * (1 / unit_value.force_limit);
+				total_army += total_provinces;
+				if (unit_value.requires_coast) {
+					total_naval_army += total_provinces;
+				}
+			});
+
+			unit_limits.set({ total_army, total_naval_army });
+
+			owned_units.set(new_units_map);
+		}
+	});
+
 	let last_ref = ref(db, `meta/last_payent`);
 	onValue(last_ref, async (snapshot) => {
 		// Gets the days since the unix epoch
@@ -138,6 +196,7 @@ function on_load() {
 		let new_territory_colours = new Map();
 		let new_province_owners = new Map();
 		internal_provinces_count = new Map();
+		let new_coastal_province_count = new Map();
 		snapshot.forEach((snapshot) => {
 			let territory_owner = snapshot.key;
 			let provinces = snapshot.child("provinces");
@@ -155,14 +214,19 @@ function on_load() {
 				new_territory_colours.set(territory_owner, new_colour);
 			}
 
-			provinces.forEach((province) => {
-				new_province_owners.set(province.val(), territory_owner);
+			let total_coastal_provinces = 0;
+			provinces.forEach((province_snapshot) => {
+				let province = province_snapshot.val();
+				new_province_owners.set(province, territory_owner);
+				if (coastal_regions.includes(province)) total_coastal_provinces += 1;
 			});
+			new_coastal_province_count.set(territory_owner, total_coastal_provinces);
 		});
 		console.log(new_province_owners);
 		user_territory_colours.set(new_territory_colours);
 		province_owners.set(new_province_owners);
 		provinces_count.set(internal_provinces_count);
+		coastal_provinces_count.set(new_coastal_province_count);
 	});
 }
 

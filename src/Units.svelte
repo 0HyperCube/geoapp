@@ -1,41 +1,58 @@
 <script lang="ts">
 	import { increment, ref, update } from "firebase/database";
 
-	import { floor } from "mathjs";
+	import { floor, max, min } from "mathjs";
 
-	import { balance, db, user_id } from "./database";
+	import {
+		balance,
+		coastal_provinces_count,
+		db,
+		owned_units,
+		provinces_count,
+		unit_limits,
+		unit_values,
+		user_id,
+	} from "./database";
 
 	import Modal from "./Modal.svelte";
-
-	let unit_values = new Map([
-		["Infantry", { cost: 10, attack_power: 1, force_limit: 2 }],
-		["Vehicular", { cost: 25, attack_power: 2, force_limit: 1 }],
-		["Tank", { cost: 50, attack_power: 5, force_limit: 0.2 }],
-		["Naval", { cost: 200, attack_power: 10, force_limit: 0.5 }],
-		["Airborne", { cost: 250, attack_power: 25, force_limit: 0.1 }],
-		["Submarine", { cost: 500, attack_power: 25, force_limit: 0.05 }],
-	]);
-
-	let owned_units = new Map([
-		["Infantry", 5],
-		["Vehicular", 3],
-		["Tank", 6],
-		["Naval", 3],
-		["Airborne", 1],
-		["Submarine", 2],
-	]);
 
 	let unit_types = [...unit_values.keys()];
 
 	let modal_open = false;
 	let unit_purchasing = "Infantry";
-	$: cost = unit_values.get(unit_purchasing).cost;
+
+	$: unit_value = unit_values.get(unit_purchasing);
+	$: cost = unit_value.cost;
+
 	$: affordable = cost <= $balance;
-	$: max_units = `${floor($balance / cost)}`;
+	$: max_units_cost = floor($balance / cost);
+	$: provinces_per_unit = 1 / unit_value.force_limit;
+
+	$: total_provinces = unit_value.requires_coast
+		? min(
+				$coastal_provinces_count.get($user_id),
+				$provinces_count.get($user_id)
+		  )
+		: $provinces_count.get($user_id);
+
+	$: available_provinces = unit_value.requires_coast
+		? min(
+				$coastal_provinces_count.get($user_id) - $unit_limits.total_naval_army,
+				$provinces_count.get($user_id) - $unit_limits.total_army
+		  )
+		: $provinces_count.get($user_id) - $unit_limits.total_army;
+
+	$: max_units_provinces = available_provinces / provinces_per_unit;
+
+	$: max_units = floor(min(max_units_cost, max_units_provinces));
 
 	let amount = 0;
-	$: total_attack = unit_values.get(unit_purchasing).attack_power * amount;
+	$: total_attack = unit_value.attack_power * amount;
 	$: total_cost = cost * amount;
+
+	$: {
+		amount = max(min(amount || 0, max_units), 0);
+	}
 
 	function purchase() {
 		let updates = {};
@@ -50,9 +67,10 @@
 	{#each unit_types as unit_type}
 		<tr
 			><td>{unit_type}</td>
-			<td>{owned_units.get(unit_type)} units</td>
+			<td>{$owned_units.get(unit_type) || 0} units</td>
 			<td
-				>{owned_units.get(unit_type) * unit_values.get(unit_type).attack_power} attack
+				>{($owned_units.get(unit_type) || 0) *
+					unit_values.get(unit_type).attack_power} attack
 			</td></tr
 		>
 	{/each}
@@ -75,8 +93,12 @@
 				{/each}
 			</select>
 		</div>
+		<div class="row">Cost: {cost}gc</div>
 		<div class="row">
-			Cost: {cost}gc
+			{unit_value.requires_coast ? "Coastal provinces" : "Provinces"} per unit: {provinces_per_unit}
+		</div>
+		<div class="row">
+			Available provinces: {available_provinces} / {total_provinces}
 		</div>
 		{#if affordable}
 			<div class="row">
@@ -84,18 +106,14 @@
 				<input
 					type="range"
 					min="0"
-					max={max_units}
+					max={`${max_units}`}
 					step="1"
 					bind:value={amount}
 				/>
 				<span class="amount"> {amount}</span>
 			</div>
-			<div class="row">
-				Total cost: {total_cost}gc
-			</div>
-			<div class="row">
-				Total attack: {total_attack}
-			</div>
+			<div class="row">Total cost: {total_cost}gc</div>
+			<div class="row">Total attack: {total_attack}</div>
 		{:else}
 			<div class="row">You cannot afford any of these units.</div>
 		{/if}
