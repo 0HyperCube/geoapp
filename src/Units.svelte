@@ -57,7 +57,7 @@
 	function purchase() {
 		let updates = {};
 		updates[`users/${$user_id}/gc`] = increment(-total_cost);
-		updates[`units/${$user_id}/${unit_purchasing}`] = increment(1);
+		updates[`units/${$user_id}/${unit_purchasing}`] = increment(amount);
 		balance.update((balance) => balance - total_cost);
 		update(ref(db), updates);
 	}
