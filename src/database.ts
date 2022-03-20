@@ -55,30 +55,84 @@ export let coastal_provinces_count = writable(new Map<string, number>());
 export let owned_units = writable(new Map<string, number>());
 export let unit_limits = writable({ total_army: 0, total_naval_army: 0 });
 
+function damage(
+	infantry: number,
+	vehicular: number,
+	tank: number,
+	naval: number,
+	airborne: number,
+	submarine: number
+): Map<string, number> {
+	return new Map([
+		["Infantry", infantry],
+		["Vehicular", vehicular],
+		["Tank", tank],
+		["Naval", naval],
+		["Airborne", airborne],
+		["Submarine", submarine],
+	]);
+}
+
 export const unit_values = new Map([
 	[
 		"Infantry",
-		{ cost: 10, attack_power: 1, force_limit: 2, requires_coast: false },
+		{
+			cost: 10,
+			force_limit: 2,
+			requires_coast: false,
+			hp: 2,
+			damage: damage(1, 0, 0, 0, 0, 0),
+		},
 	],
 	[
 		"Vehicular",
-		{ cost: 25, attack_power: 2, force_limit: 1, requires_coast: false },
+		{
+			cost: 25,
+			force_limit: 1,
+			requires_coast: false,
+			hp: 7,
+			damage: damage(3, 2, 1, 0, 0, 0),
+		},
 	],
 	[
 		"Tank",
-		{ cost: 50, attack_power: 5, force_limit: 0.2, requires_coast: false },
+		{
+			cost: 50,
+			force_limit: 0.2,
+			requires_coast: false,
+			hp: 50,
+			damage: damage(10, 7, 5, 0, 0, 0),
+		},
 	],
 	[
 		"Naval",
-		{ cost: 200, attack_power: 10, force_limit: 0.5, requires_coast: true },
+		{
+			cost: 200,
+			force_limit: 0.5,
+			requires_coast: true,
+			hp: 20,
+			damage: damage(0, 0, 0, 10, 7, 0),
+		},
 	],
 	[
 		"Airborne",
-		{ cost: 250, attack_power: 25, force_limit: 0.1, requires_coast: false },
+		{
+			cost: 250,
+			force_limit: 0.1,
+			requires_coast: false,
+			hp: 25,
+			damage: damage(20, 20, 10, 20, 10, 15),
+		},
 	],
 	[
 		"Submarine",
-		{ cost: 500, attack_power: 25, force_limit: 0.05, requires_coast: true },
+		{
+			cost: 500,
+			force_limit: 0.05,
+			requires_coast: true,
+			hp: 100,
+			damage: damage(0, 0, 0, 50, 25, 100),
+		},
 	],
 ]);
 

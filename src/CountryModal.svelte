@@ -21,6 +21,12 @@
 	$: coastal = coastal_regions.includes(province);
 	$: owner = $province_owners.get(province);
 	$: scoutable = count_exploration(province, $province_owners);
+	$: neighbours_user =
+		province &&
+		province_neighbours
+			.get(province)
+			.find((neighbour) => $province_owners.get(neighbour) === $user_id);
+	$: attackable = owner && owner !== $user_id && (coastal || neighbours_user);
 
 	function conquor() {
 		use_action();
@@ -58,6 +64,7 @@
 		}
 		return discovered_count;
 	}
+	function attack() {}
 </script>
 
 <Modal bind:modal_open>
@@ -70,13 +77,15 @@
 	<span slot="action">
 		{#if $logged_in && !owner && coastal && $actions > 0}
 			<button on:click={conquor}>Explore via sea</button>
-		{/if}
-		{#if $logged_in && owner === $user_id && scoutable > 0 && $actions > 0}
+		{:else if $logged_in && owner === $user_id && scoutable > 0 && $actions > 0}
 			<button on:click={explore}
 				>Scout {scoutable} neighbour{scoutable == 1 ? "" : "s"}</button
 			>
-		{/if}
-		{#if $actions === 0}
+		{:else if attackable}
+			<button on:click={attack}
+				>Attack {neighbours_user ? "" : "via sea"}</button
+			>
+		{:else if $actions === 0 && $logged_in && ((!owner && coastal) || (owner === $user_id && scoutable > 0))}
 			<span class="button-like">No actions left</span>
 		{/if}
 	</span>

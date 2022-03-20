@@ -47,7 +47,6 @@
 	$: max_units = floor(min(max_units_cost, max_units_provinces));
 
 	let amount = 0;
-	$: total_attack = unit_value.attack_power * amount;
 	$: total_cost = cost * amount;
 
 	$: {
@@ -69,8 +68,7 @@
 			><td>{unit_type}</td>
 			<td>{$owned_units.get(unit_type) || 0} units</td>
 			<td
-				>{($owned_units.get(unit_type) || 0) *
-					unit_values.get(unit_type).attack_power} attack
+				>{($owned_units.get(unit_type) || 0) * unit_values.get(unit_type).hp} hp
 			</td></tr
 		>
 	{/each}
@@ -100,7 +98,21 @@
 		<div class="row">
 			Available provinces: {available_provinces} / {total_provinces}
 		</div>
+		<div class="row">Hp: {unit_value.hp}</div>
+		<div class="row">
+			Attack:
+			<table>
+				{#each unit_types as attack_unit}
+					{#if unit_value.damage.get(attack_unit)}
+						<tr
+							><td>vs {attack_unit}</td>{unit_value.damage.get(attack_unit)}</tr
+						>
+					{/if}
+				{/each}
+			</table>
+		</div>
 		{#if affordable}
+			<hr />
 			<div class="row">
 				Amount:
 				<input
@@ -113,7 +125,6 @@
 				<span class="amount"> {amount}</span>
 			</div>
 			<div class="row">Total cost: {total_cost}gc</div>
-			<div class="row">Total attack: {total_attack}</div>
 		{:else}
 			<div class="row">You cannot afford any of these units.</div>
 		{/if}
@@ -154,5 +165,15 @@
 	.amount {
 		width: 1em;
 		text-align: right;
+	}
+	table {
+		flex-grow: 1;
+	}
+	hr {
+		border: none;
+		outline: none;
+		height: 1px;
+		width: 100%;
+		background-color: #ffffff50;
 	}
 </style>
