@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { increment, push, ref, update } from "firebase/database";
+	import { increment, push, ref, remove, set, update } from "firebase/database";
 
 	import {
 		user_id,
@@ -11,6 +11,7 @@
 		player_units,
 		unit_values,
 		attack_order,
+		province_owner_uuid,
 	} from "./database";
 	import { province_neighbours } from "./countries";
 	import Modal from "./Modal.svelte";
@@ -138,7 +139,15 @@
 		);
 
 		update(ref(db, `units/${$user_id}`), attacker_update);
-		update(ref(db, `units/${defender}}`), defender_update);
+		update(ref(db, `units/${defender}`), defender_update);
+
+		if (attacker_hp > defender_hp) {
+			push(ref(db, `territories/${$user_id}/provinces`), province);
+
+			let province_id = $province_owner_uuid.get(province);
+			console.log(province_id);
+			remove(ref(db, `territories/${defender}/provinces/${province_id}`));
+		}
 
 		console.log(defender_hp, defender_losses);
 		console.log(attacker_hp, attacker_losses);

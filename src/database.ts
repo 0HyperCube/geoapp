@@ -48,6 +48,7 @@ export let balance = writable(0);
 export let development_level = writable(0);
 export let actions = writable(0);
 export let province_owners = writable(new Map<string, string>());
+export let province_owner_uuid = writable(new Map<string, string>());
 export let user_territory_colours = writable(new Map<string, string>());
 let internal_provinces_count = new Map<string, number>();
 export let provinces_count = writable(new Map<string, number>());
@@ -267,6 +268,7 @@ function on_load() {
 		let new_province_owners = new Map();
 		internal_provinces_count = new Map();
 		let new_coastal_province_count = new Map();
+		let new_province_owner_uuid = new Map();
 		snapshot.forEach((snapshot) => {
 			let territory_owner = snapshot.key;
 			let provinces = snapshot.child("provinces");
@@ -288,13 +290,15 @@ function on_load() {
 			provinces.forEach((province_snapshot) => {
 				let province = province_snapshot.val();
 				new_province_owners.set(province, territory_owner);
+				new_province_owner_uuid.set(province, province_snapshot.key);
 				if (coastal_regions.includes(province)) total_coastal_provinces += 1;
 			});
 			new_coastal_province_count.set(territory_owner, total_coastal_provinces);
 		});
-		console.log(new_province_owners);
+		console.log(new_province_owner_uuid);
 		user_territory_colours.set(new_territory_colours);
 		province_owners.set(new_province_owners);
+		province_owner_uuid.set(new_province_owner_uuid);
 		provinces_count.set(internal_provinces_count);
 		coastal_provinces_count.set(new_coastal_province_count);
 	});
