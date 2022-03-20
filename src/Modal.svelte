@@ -104,9 +104,6 @@
 	h1 {
 		margin: 0 0 20px 0;
 	}
-	p {
-		margin: 0;
-	}
 	.actions {
 		display: flex;
 		flex-direction: row;

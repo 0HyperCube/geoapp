@@ -52,8 +52,17 @@ export let user_territory_colours = writable(new Map<string, string>());
 let internal_provinces_count = new Map<string, number>();
 export let provinces_count = writable(new Map<string, number>());
 export let coastal_provinces_count = writable(new Map<string, number>());
-export let owned_units = writable(new Map<string, number>());
+export let player_units = writable(new Map<string, Map<string, number>>());
 export let unit_limits = writable({ total_army: 0, total_naval_army: 0 });
+
+export const attack_order = [
+	"Submarine",
+	"Airborne",
+	"Naval",
+	"Tank",
+	"Vehicular",
+	"Infantry",
+];
 
 function damage(
 	infantry: number,
@@ -186,31 +195,38 @@ function on_login() {
 		else actions.set(new_actions);
 	});
 
-	let units_ref = ref(db, `units/${user_id}`);
+	let units_ref = ref(db, `units/`);
 	onValue(units_ref, (snapshot) => {
-		let new_units = snapshot.val();
-		console.log(new_units);
-		if (new_units !== null) {
-			let new_units_map = new Map<string, number>();
-			snapshot.forEach((child) => {
-				new_units_map.set(child.key, child.val());
-			});
+		let all_units = new Map<string, Map<string, number>>();
+		snapshot.forEach((snapshot) => {
+			let new_units = snapshot.val();
+			let owner = snapshot.key;
+			console.log(new_units);
+			if (new_units !== null) {
+				let new_units_map = new Map<string, number>();
+				snapshot.forEach((child) => {
+					new_units_map.set(child.key, child.val());
+				});
 
-			let total_army = 0;
-			let total_naval_army = 0;
-			new_units_map.forEach((count, unit) => {
-				let unit_value = unit_values.get(unit);
-				let total_provinces = count * (1 / unit_value.force_limit);
-				total_army += total_provinces;
-				if (unit_value.requires_coast) {
-					total_naval_army += total_provinces;
+				if (user.uid === owner) {
+					let total_army = 0;
+					let total_naval_army = 0;
+					new_units_map.forEach((count, unit) => {
+						let unit_value = unit_values.get(unit);
+						let total_provinces = count * (1 / unit_value.force_limit);
+						total_army += total_provinces;
+						if (unit_value.requires_coast) {
+							total_naval_army += total_provinces;
+						}
+					});
+
+					unit_limits.set({ total_army, total_naval_army });
 				}
-			});
 
-			unit_limits.set({ total_army, total_naval_army });
-
-			owned_units.set(new_units_map);
-		}
+				all_units.set(owner, new_units_map);
+			}
+		});
+		player_units.set(all_units);
 	});
 
 	let last_ref = ref(db, `meta/last_payent`);

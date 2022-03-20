@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { push, ref } from "firebase/database";
+	import { increment, push, ref, update } from "firebase/database";
 
 	import {
 		user_id,
@@ -8,15 +8,20 @@
 		province_owners,
 		actions,
 		use_action,
+		player_units,
+		unit_values,
+		attack_order,
 	} from "./database";
 	import { province_neighbours } from "./countries";
 	import Modal from "./Modal.svelte";
+	import { ceil, min, sum, unit } from "mathjs";
 
 	export let province = "";
 	export let regions = new Map();
 	export let coastal_regions = [];
 
 	export let modal_open = false;
+	let attack_open = false;
 
 	$: coastal = coastal_regions.includes(province);
 	$: owner = $province_owners.get(province);
@@ -64,7 +69,83 @@
 		}
 		return discovered_count;
 	}
-	function attack() {}
+
+	let [attacker_hp, defender_hp] = [0, 0];
+	let [attacker_losses, defender_losses] = [
+		new Map<string, number>(),
+		new Map<string, number>(),
+	];
+
+	function attack() {
+		function apply_damage(
+			attacker_units: Map<string, number>,
+			defender_units: Map<string, number>
+		): [number, Map<string, number>, {}] {
+			let defender_hp = new Map<string, number>();
+			defender_units.forEach((amount, type) => {
+				defender_hp.set(type, unit_values.get(type).hp * amount);
+			});
+
+			attack_order.forEach((attacking_type) => {
+				let attackers_left = attacker_units.get(attacking_type) || 0;
+				attack_order.forEach((defending_type) => {
+					let hp = defender_hp.get(defending_type);
+					let damage_per_attacker = unit_values
+						.get(attacking_type)
+						.damage.get(defending_type);
+					if (damage_per_attacker && hp) {
+						let units_used = min(attackers_left, hp / damage_per_attacker);
+						attackers_left -= units_used;
+						defender_hp.set(
+							defending_type,
+							hp - units_used * damage_per_attacker
+						);
+					}
+				});
+			});
+
+			let losses = new Map<string, number>();
+			let losses_update = {};
+			defender_units.forEach((amount, unit) => {
+				let hp = defender_hp.get(unit);
+				let hp_per_unit = unit_values.get(unit).hp;
+				let lost = amount - ceil(hp / hp_per_unit);
+				losses.set(unit, lost);
+				losses_update[unit] = increment(-lost);
+			});
+
+			let total_hp = 0;
+			defender_hp.forEach((hp) => {
+				total_hp += hp;
+			});
+
+			return [total_hp, losses, losses_update];
+		}
+
+		let defender = owner;
+
+		let attacker_units = $player_units.get($user_id);
+		let defender_units = $player_units.get(defender);
+
+		let [attacker_update, defender_update] = [{}, {}];
+		[defender_hp, defender_losses, defender_update] = apply_damage(
+			attacker_units,
+			defender_units
+		);
+		[attacker_hp, attacker_losses, attacker_update] = apply_damage(
+			defender_units,
+			attacker_units
+		);
+
+		update(ref(db, `units/${$user_id}`), attacker_update);
+		update(ref(db, `units/${defender}}`), defender_update);
+
+		console.log(defender_hp, defender_losses);
+		console.log(attacker_hp, attacker_losses);
+
+		attack_open = true;
+		modal_open = false;
+	}
 </script>
 
 <Modal bind:modal_open>
@@ -90,6 +171,29 @@
 		{/if}
 	</span>
 </Modal>
+<Modal bind:modal_open={attack_open}>
+	<span slot="title">
+		{attacker_hp > defender_hp ? "Victory!" : "Defeat!"}
+	</span>
+	<div slot="conent">
+		<p>Location: {province.replaceAll("_", " ")}</p>
+		<h2>Attacker losses</h2>
+		{#each [...unit_values.keys()] as unit}
+			{#if attacker_losses.get(unit)}
+				<p>{unit}: {attacker_losses.get(unit)}</p>
+			{/if}
+		{/each}
+		<p><b>Remaining hp: {attacker_hp}</b></p>
+		<h2>Defender losses</h2>
+		{#each [...unit_values.keys()] as unit}
+			{#if defender_losses.get(unit)}
+				<p>{unit}: {defender_losses.get(unit)}</p>
+			{/if}
+		{/each}
+		<p><b>Remaining hp: {defender_hp}</b></p>
+	</div>
+	<span slot="action" />
+</Modal>
 
 <style>
 	p {
@@ -98,5 +202,9 @@
 	button,
 	.button-like {
 		margin: 5px;
+	}
+	h2 {
+		font-size: 20px;
+		margin: 10px 0 5px 0;
 	}
 </style>

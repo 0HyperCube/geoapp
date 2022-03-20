@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { increment, ref, update } from "firebase/database";
+	import { get, increment, ref, update } from "firebase/database";
 
 	import { floor, max, min } from "mathjs";
 
@@ -7,7 +7,7 @@
 		balance,
 		coastal_provinces_count,
 		db,
-		owned_units,
+		player_units,
 		provinces_count,
 		unit_limits,
 		unit_values,
@@ -66,9 +66,10 @@
 	{#each unit_types as unit_type}
 		<tr
 			><td>{unit_type}</td>
-			<td>{$owned_units.get(unit_type) || 0} units</td>
+			<td>{$player_units.get($user_id)?.get(unit_type) ?? 0} units</td>
 			<td
-				>{($owned_units.get(unit_type) || 0) * unit_values.get(unit_type).hp} hp
+				>{($player_units.get($user_id)?.get(unit_type) ?? 0) *
+					unit_values.get(unit_type).hp} hp
 			</td></tr
 		>
 	{/each}
@@ -98,7 +99,7 @@
 		<div class="row">
 			Available provinces: {available_provinces} / {total_provinces}
 		</div>
-		<div class="row">Hp: {unit_value.hp}</div>
+		<div class="row">Health: {unit_value.hp}</div>
 		<div class="row">
 			Attack:
 			<table>
@@ -111,8 +112,8 @@
 				{/each}
 			</table>
 		</div>
+		<hr />
 		{#if affordable}
-			<hr />
 			<div class="row">
 				Amount:
 				<input
