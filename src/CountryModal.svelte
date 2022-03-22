@@ -78,6 +78,8 @@
 	];
 
 	function attack() {
+		use_action();
+
 		function apply_damage(
 			attacker_units: Map<string, number>,
 			defender_units: Map<string, number>
@@ -175,11 +177,11 @@
 			<button on:click={explore}
 				>Scout {scoutable} neighbour{scoutable == 1 ? "" : "s"}</button
 			>
-		{:else if attackable}
+		{:else if attackable && $actions > 0}
 			<button on:click={attack}
 				>Attack {neighbours_user ? "" : "via sea"}</button
 			>
-		{:else if $actions === 0 && $logged_in && ((!owner && coastal) || (owner === $user_id && scoutable > 0))}
+		{:else if $actions === 0 && $logged_in && ((!owner && coastal) || (owner === $user_id && scoutable > 0) || attackable)}
 			<span class="button-like">No actions left</span>
 		{/if}
 	</span>
