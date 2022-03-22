@@ -38,11 +38,17 @@
 			focus_modal();
 		}
 	});
-	document.onkeydown = (e: KeyboardEvent) => {
-		if (modal_open && e.key === "Escape") {
-			modal_open = false;
+
+	$: {
+		if (modal_open) {
+			document.onkeydown = (e: KeyboardEvent) => {
+				console.log(e.key);
+				if (modal_open && e.key === "Escape") {
+					modal_open = false;
+				}
+			};
 		}
-	};
+	}
 </script>
 
 {#if modal_open}
