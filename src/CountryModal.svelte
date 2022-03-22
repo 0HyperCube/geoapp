@@ -82,13 +82,17 @@
 			attacker_units: Map<string, number>,
 			defender_units: Map<string, number>
 		): [number, Map<string, number>, {}] {
+			if (!defender_units) {
+				return [0, new Map(), {}];
+			}
+
 			let defender_hp = new Map<string, number>();
 			defender_units.forEach((amount, type) => {
 				defender_hp.set(type, unit_values.get(type).hp * amount);
 			});
 
 			attack_order.forEach((attacking_type) => {
-				let attackers_left = attacker_units.get(attacking_type) || 0;
+				let attackers_left = attacker_units?.get(attacking_type) ?? 0;
 				attack_order.forEach((defending_type) => {
 					let hp = defender_hp.get(defending_type);
 					let damage_per_attacker = unit_values
