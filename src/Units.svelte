@@ -30,19 +30,21 @@
 
 	$: total_provinces = unit_value.requires_coast
 		? min(
-				$coastal_provinces_count.get($user_id),
-				$provinces_count.get($user_id)
+				$coastal_provinces_count.get($user_id) || 0,
+				$provinces_count.get($user_id) || 0
 		  )
-		: $provinces_count.get($user_id);
+		: $provinces_count.get($user_id) || 0;
 
 	$: available_provinces = unit_value.requires_coast
 		? min(
-				$coastal_provinces_count.get($user_id) - $unit_limits.total_naval_army,
-				$provinces_count.get($user_id) - $unit_limits.total_army
+				$coastal_provinces_count.get($user_id) -
+					$unit_limits.total_naval_army || 0,
+				$provinces_count.get($user_id) - $unit_limits.total_army || 0
 		  )
-		: $provinces_count.get($user_id) - $unit_limits.total_army;
+		: $provinces_count.get($user_id) - $unit_limits.total_army || 0;
 
 	$: max_units_provinces = available_provinces / provinces_per_unit;
+	$: under_troop_limit = floor(max_units_provinces) > 0;
 
 	$: max_units = floor(min(max_units_cost, max_units_provinces));
 
@@ -113,7 +115,11 @@
 			</table>
 		</div>
 		<hr />
-		{#if affordable}
+		{#if !affordable}
+			<div class="row">You cannot afford any of these units.</div>
+		{:else if !under_troop_limit}
+			<div class="row">You do not have enough provinces.</div>
+		{:else}
 			<div class="row">
 				Amount:
 				<input
@@ -126,17 +132,17 @@
 				<span class="amount"> {amount}</span>
 			</div>
 			<div class="row">Total cost: {total_cost}gc</div>
-		{:else}
-			<div class="row">You cannot afford any of these units.</div>
 		{/if}
 	</div>
 	<span slot="action">
-		{#if amount === 0 && affordable}
-			<span>No units selected</span>
-		{:else if affordable}
-			<button on:click={purchase}>Purchase</button>
-		{:else}
+		{#if !affordable}
 			<span class="modal-button">Not enough money</span>
+		{:else if !under_troop_limit}
+			<span class="modal-button">Not enough provinces</span>
+		{:else if amount === 0}
+			<span>No units selected</span>
+		{:else}
+			<button on:click={purchase}>Purchase</button>
 		{/if}
 	</span>
 </Modal>
