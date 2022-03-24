@@ -47,6 +47,7 @@
 				if (discovered_count < 4 && !$province_owners.get(new_province)) {
 					explore_from.push(new_province);
 					push(ref(db, `territories/${$user_id}/provinces`), new_province);
+					$province_owners.set(new_province, $user_id);
 					discovered_count += 1;
 				}
 			});
@@ -153,6 +154,7 @@
 			let province_id = $province_owner_uuid.get(province);
 			console.log(province_id);
 			remove(ref(db, `territories/${defender}/provinces/${province_id}`));
+			$province_owners.set(province, $user_id);
 		}
 
 		console.log(defender_hp, defender_losses);
