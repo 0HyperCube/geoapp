@@ -200,7 +200,7 @@
 		{#if economic_hub}<p>Economic hub</p>
 		{:else if military_hub}<p>Military hub</p>
 		{:else if is_owned}
-			<p>Buy a hub for {hub_cost}gc. You have {$balance}gc</p>
+			<p>Buy a hub for {hub_cost}gc and 1 action. You have {$balance}gc</p>
 		{/if}
 	</div>
 	<span slot="action">
