@@ -1,19 +1,17 @@
 <script lang="ts">
 	import { increment, ref, update } from "firebase/database";
 
-	import { i } from "mathjs";
 	import {
 		balance,
 		db,
 		development_level,
-		provinces_count,
+		income_per_province,
+		owned_provinces_count,
+		economic_hub_neighbours_count,
 		user_id,
+		income,
 	} from "./database";
 	import Modal from "./Modal.svelte";
-
-	$: per_province = 10 + $development_level;
-	$: owned_provinces_count = $provinces_count.get($user_id) || 0;
-	$: income = owned_provinces_count * per_province;
 
 	let modal_open = false;
 
@@ -36,11 +34,16 @@
 	<tr><td class="spacer" /></tr>
 
 	<tr><td>Development level</td><td>{$development_level}</td></tr>
-	<tr><td>GC per province</td><td>{per_province}gc</td></tr>
-	<tr><td>Provinces</td><td>{owned_provinces_count}</td></tr>
+	<tr><td>GC per province</td><td>{$income_per_province}gc</td></tr>
+	<tr><td>Provinces</td><td>{$owned_provinces_count}</td></tr>
+	<tr
+		><td>Economic hub neighbours (x2 income)</td><td
+			>{$economic_hub_neighbours_count}</td
+		></tr
+	>
 	<tr><td class="spacer" /></tr>
 
-	<tr><td><b>Income per day</b></td><td><b>{income}gc</b></td></tr>
+	<tr><td><b>Income per day</b></td><td><b>{$income}gc</b></td></tr>
 </table>
 
 <h3>Upgrades:</h3>

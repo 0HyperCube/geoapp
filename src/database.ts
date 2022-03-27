@@ -22,7 +22,7 @@ import {
 
 import { writable } from "svelte/store";
 import { floor, randomInt } from "mathjs";
-import { coastal_regions } from "./countries";
+import { coastal_regions, province_neighbours } from "./countries";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -46,15 +46,46 @@ export let logged_in = writable(false);
 
 export let balance = writable(0);
 export let development_level = writable(0);
+export let income_per_province = writable(0);
+let internal_icome_per_province = 10;
+
+let internal_province_owners = new Map<string, string>();
+
 export let actions = writable(0);
 export let province_owners = writable(new Map<string, string>());
 export let province_owner_uuid = writable(new Map<string, string>());
 export let user_territory_colours = writable(new Map<string, string>());
+
 let internal_provinces_count = new Map<string, number>();
+let user_economic_hubs = [] as string[];
+export let economic_hub_neighbours_count = writable(0);
+let user_military_hubs = 0;
 export let provinces_count = writable(new Map<string, number>());
 export let coastal_provinces_count = writable(new Map<string, number>());
 export let player_units = writable(new Map<string, Map<string, number>>());
 export let unit_limits = writable({ total_army: 0, total_naval_army: 0 });
+export let military_centres = writable(new Map<string, string>());
+export let economic_centres = writable(new Map<string, string>());
+
+export let owned_provinces_count = writable(0);
+// owned_provinces_count.subscribe;
+
+export let income = writable(0);
+
+function update_income() {
+	let new_economic_bonuses = new Set(
+		user_economic_hubs
+			.flatMap((province) => province_neighbours.get(province))
+			.filter(
+				(neighbour) => internal_province_owners.get(neighbour) === user.uid
+			)
+	).size;
+	economic_hub_neighbours_count.set(new_economic_bonuses);
+	income.set(
+		internal_icome_per_province *
+			(internal_provinces_count.get(user.uid) + new_economic_bonuses)
+	);
+}
 
 export const attack_order = [
 	"Submarine",
@@ -260,12 +291,22 @@ function on_login() {
 			set(last_ref, days);
 		}
 	});
+
+	development_level.subscribe((lvl) => {
+		internal_icome_per_province = lvl + 10;
+		income_per_province.set(lvl + 10);
+		update_income();
+	});
+
+	provinces_count.subscribe((count) =>
+		owned_provinces_count.set(count.get(user.uid) || 0)
+	);
 }
 
 function on_load() {
 	onValue(ref(db, `territories`), (snapshot) => {
 		let new_territory_colours = new Map();
-		let new_province_owners = new Map();
+		internal_province_owners = new Map();
 		internal_provinces_count = new Map();
 		let new_coastal_province_count = new Map();
 		let new_province_owner_uuid = new Map();
@@ -289,7 +330,7 @@ function on_load() {
 			let total_coastal_provinces = 0;
 			provinces.forEach((province_snapshot) => {
 				let province = province_snapshot.val();
-				new_province_owners.set(province, territory_owner);
+				internal_province_owners.set(province, territory_owner);
 				new_province_owner_uuid.set(province, province_snapshot.key);
 				if (coastal_regions.includes(province)) total_coastal_provinces += 1;
 			});
@@ -297,10 +338,42 @@ function on_load() {
 		});
 		console.log(new_province_owner_uuid);
 		user_territory_colours.set(new_territory_colours);
-		province_owners.set(new_province_owners);
+		province_owners.set(internal_province_owners);
 		province_owner_uuid.set(new_province_owner_uuid);
 		provinces_count.set(internal_provinces_count);
 		coastal_provinces_count.set(new_coastal_province_count);
+
+		if (user.uid) update_income();
+	});
+
+	onValue(ref(db, `special_provinces/economic`), (snapshot) => {
+		let new_economic_centres = new Map();
+		user_economic_hubs = [] as string[];
+		snapshot.forEach((current_user) => {
+			current_user.forEach((child) => {
+				let key = child.key;
+				let province = child.val();
+				new_economic_centres.set(province, key);
+
+				if (current_user.key === user.uid) {
+					user_economic_hubs.push(province);
+				}
+			});
+		});
+		economic_centres.set(new_economic_centres);
+
+		if (user.uid) update_income();
+	});
+	onValue(ref(db, `special_provinces/military`), (snapshot) => {
+		let new_military_centres = new Map();
+		snapshot.forEach((user) => {
+			user.forEach((child) => {
+				let key = child.key;
+				let province = child.val();
+				new_military_centres.set(province, key);
+			});
+		});
+		military_centres.set(new_military_centres);
 	});
 }
 

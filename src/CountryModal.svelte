@@ -12,6 +12,10 @@
 		unit_values,
 		attack_order,
 		province_owner_uuid,
+		economic_centres,
+		military_centres,
+		balance,
+		income,
 	} from "./database";
 	import { province_neighbours } from "./countries";
 	import Modal from "./Modal.svelte";
@@ -26,6 +30,7 @@
 
 	$: coastal = coastal_regions.includes(province);
 	$: owner = $province_owners.get(province);
+	$: is_owned = owner === $user_id;
 	$: scoutable = count_exploration(province, $province_owners);
 	$: neighbours_user =
 		province &&
@@ -33,6 +38,9 @@
 			.get(province)
 			.find((neighbour) => $province_owners.get(neighbour) === $user_id);
 	$: attackable = owner && owner !== $user_id && (coastal || neighbours_user);
+	$: economic_hub = $economic_centres.has(province);
+	$: military_hub = $military_centres.has(province);
+	$: hub_cost = ceil($income * 5) / 100;
 
 	function conquor() {
 		use_action();
@@ -77,6 +85,13 @@
 		new Map<string, number>(),
 		new Map<string, number>(),
 	];
+
+	function build_economic_hub() {
+		use_action();
+		push(ref(db, `special_provinces/economic/${$user_id}`), province);
+		$economic_centres.set(province, null);
+		economic_hub = true;
+	}
 
 	function attack() {
 		use_action();
@@ -154,6 +169,17 @@
 			let province_id = $province_owner_uuid.get(province);
 			console.log(province_id);
 			remove(ref(db, `territories/${defender}/provinces/${province_id}`));
+
+			if ($economic_centres.has(province)) {
+				let id = $economic_centres.get(province);
+				remove(ref(db, `special_provinces/economic/${defender}/${id}`));
+			}
+
+			if ($military_centres.has(province)) {
+				let id = $military_centres.get(province);
+				remove(ref(db, `special_provinces/military/${defender}/${id}`));
+			}
+
 			$province_owners.set(province, $user_id);
 		}
 
@@ -171,19 +197,30 @@
 		<p>Region: {regions.get(province).name}</p>
 		<p>{coastal ? "Coastal" : "Landlocked"}</p>
 		<p>Owner: {owner ? owner : "None"}</p>
+		{#if economic_hub}<p>Economic hub</p>
+		{:else if military_hub}<p>Military hub</p>
+		{:else if is_owned}
+			<p>Buy a hub for {hub_cost}gc. You have {$balance}gc</p>
+		{/if}
 	</div>
 	<span slot="action">
 		{#if $logged_in && !owner && coastal && $actions > 0}
 			<button on:click={conquor}>Explore via sea</button>
-		{:else if $logged_in && owner === $user_id && scoutable > 0 && $actions > 0}
-			<button on:click={explore}
-				>Scout {scoutable} neighbour{scoutable == 1 ? "" : "s"}</button
-			>
+		{:else if $logged_in && is_owned && $actions > 0}
+			{#if scoutable > 0}
+				<button on:click={explore}
+					>Scout {scoutable} neighbour{scoutable == 1 ? "" : "s"}</button
+				>
+			{/if}
+			{#if hub_cost <= $balance && !economic_hub && !military_hub}
+				<button on:click={build_economic_hub}>Economic hub</button>
+				<button>Military hub (not implemented)</button>
+			{/if}
 		{:else if attackable && $actions > 0}
 			<button on:click={attack}
 				>Attack {neighbours_user ? "" : "via sea"}</button
 			>
-		{:else if $actions === 0 && $logged_in && ((!owner && coastal) || (owner === $user_id && scoutable > 0) || attackable)}
+		{:else if $actions === 0 && $logged_in && ((!owner && coastal) || (is_owned && scoutable > 0) || attackable)}
 			<span class="button-like">No actions left</span>
 		{/if}
 	</span>

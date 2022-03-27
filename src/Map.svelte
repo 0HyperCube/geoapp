@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { paths, regions, coastal_regions } from "./countries";
 	import { user_territory_colours, province_owners } from "./database";
-	import math, { abs } from "mathjs";
+	import { abs } from "mathjs";
 
 	import { RadioGroup, Radio } from "svelte-radio";
 	import Tooltip from "./Tooltip.svelte";
 	import CountryModal from "./CountryModal.svelte";
+	import SvgSymobols from "./SvgSymobols.svelte";
 
 	let path_entries = [...paths.entries()];
 
@@ -193,6 +194,8 @@
 				stroke-width="0.2"
 			/>
 		{/each}
+
+		<SvgSymobols />
 	</svg>
 </div>
 

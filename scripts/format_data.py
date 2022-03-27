@@ -60,8 +60,6 @@ def parse_svg_float(index, svg):
 
     if index < len(svg) and svg[index] == " ":
         index += 1
-    if index < len(svg) and svg[index].lower() == "z":
-        index += 1
     return (float(result), index)
 
 
@@ -72,6 +70,9 @@ def parse_svg(svg):
     points = []
     current_position = (0, 0)
     bounding_box = (inf, inf, -inf, -inf)
+    centre = (0, 0)
+    centre_points = 0
+    calculated_centre = []
 
     while index < len(svg):
         # Implicitly use last command if no new command is found
@@ -105,7 +106,15 @@ def parse_svg(svg):
             (y, index) = parse_svg_float(index, svg)
             current_position = (current_position[0] + x, current_position[1] + y)
 
+        elif command == "z" or command == "Z":
+            calculated_centre.append((centre_points, centre))
+            centre_points = 0
+            centre = (0, 0)
+            continue
+
         points.append(current_position)
+        centre = (centre[0] + current_position[0], centre[1] + current_position[1])
+        centre_points += 1
 
         bounding_box = (
             min(bounding_box[0], current_position[0]),
@@ -114,7 +123,11 @@ def parse_svg(svg):
             max(bounding_box[3], current_position[1]),
         )
 
-    return (KDTree(points), bounding_box)
+    calculated_centre.append((centre_points, centre))
+    (num, total) = max(calculated_centre, key=lambda x: x[0])
+    centre = [total[0] / num, total[1] / num]
+
+    return (KDTree(points), bounding_box, centre)
 
 
 def check_bounds_intersect(a, b):
@@ -138,14 +151,19 @@ def evaluate_neighbours(points):
             a_name,
             [
                 b_name
-                for (b_name, (b_tree, b_bound)) in points
+                for (b_name, (b_tree, b_bound, _)) in points
                 if check_bounds_intersect(a_bound, b_bound)
                 and not a_name == b_name
                 and not all(item == [] for item in b_tree.query_ball_tree(a_tree, 0.5))
             ],
         ]
-        for (a_name, (a_tree, a_bound)) in points
+        for (a_name, (a_tree, a_bound, _)) in points
     ]
+
+
+def evaluate_centre(points):
+    """Calculate the centre of each province"""
+    return [[name, centre] for (name, (_, _, centre)) in points]
 
 
 def run():
@@ -163,6 +181,11 @@ def run():
     print("Evaluate neighbours...")
     start = time.time()
     neighbours = evaluate_neighbours(points)
+    print(f"Done in {time.time() - start:.3f}s\n")
+
+    print("Evaluate centres...")
+    start = time.time()
+    centres = evaluate_centre(points)
     print(f"Done in {time.time() - start:.3f}s\n")
 
     print("Evaluating output string...")
@@ -187,6 +210,8 @@ def run():
     result += f"export let coastal_regions = {coastal};"
     result += f"export let province_neighbours: Map<string, string[]> = new Map({neighbours});"
 
+    result += f"export let province_centres: Map<string, [number, number]> = new Map({centres});"
+
     print(f"Done in {time.time() - start:.3f}s\n")
 
     print("Writing to file...")
@@ -194,6 +219,10 @@ def run():
 
     with open(f"{__file__[:-22]}src/countries.ts", "w") as f:
         f.write(result)
+
+        # neighbours.sort(key = lambda x: len(x[1]), reverse = True)
+        # max_neighbours = [f"{x[0]}: {len(x[1])}" for x in neighbours]
+        # f.write("\n\n" + '\n'.join(max_neighbours))
 
     print(f"Done in {time.time() - start:.3f}s\n")
 

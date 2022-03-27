@@ -7,6 +7,7 @@
 
 	import { initalise_database, logged_in } from "./database";
 	import Finance from "./Finance.svelte";
+	import { map } from "mathjs";
 
 	onMount(async () => {
 		initalise_database();
