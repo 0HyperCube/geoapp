@@ -88,6 +88,7 @@
 
 	function build_economic_hub() {
 		use_action();
+		set(ref(db, `users/${$user_id}/gc`), increment(-hub_cost));
 		push(ref(db, `special_provinces/economic/${$user_id}`), province);
 		$economic_centres.set(province, null);
 		economic_hub = true;
