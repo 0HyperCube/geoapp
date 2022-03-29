@@ -180,13 +180,13 @@
 			apply_damage(
 				attacker_units,
 				defender_units,
-				user_military_hubs.get($user_id)
+				user_military_hubs.get($user_id) || []
 			);
 		[attacker_hp, attacker_losses, attacker_update, defender_boost] =
 			apply_damage(
 				defender_units,
 				attacker_units,
-				user_military_hubs.get(defender)
+				user_military_hubs.get(defender) || []
 			);
 
 		update(ref(db, `units/${$user_id}`), attacker_update);
@@ -267,10 +267,16 @@
 	</span>
 	<div slot="conent">
 		<p>Location: {province.replaceAll("_", " ")}</p>
+
+		<br />
+
 		<p>Attacker boost +{attacker_boost}%</p>
 		<p>Defender boost +{defender_boost}%</p>
+
+		<br />
+
 		<h2>Attacker losses</h2>
-		{#if attacker_has_lost_units}
+		{#if !attacker_has_lost_units}
 			{#each [...unit_values.keys()] as unit}
 				{#if attacker_losses.get(unit)}
 					<p>{unit}: {attacker_losses.get(unit)}</p>
@@ -280,8 +286,11 @@
 			<p><i>No losses</i></p>
 		{/if}
 		<p><b>Remaining hp: {attacker_hp}</b></p>
+
+		<br />
+
 		<h2>Defender losses</h2>
-		{#if defender_has_lost_units}
+		{#if !defender_has_lost_units}
 			{#each [...unit_values.keys()] as unit}
 				{#if defender_losses.get(unit)}
 					<p>{unit}: {defender_losses.get(unit)}</p>
@@ -305,6 +314,6 @@
 	}
 	h2 {
 		font-size: 20px;
-		margin: 10px 0 5px 0;
+		margin: 0;
 	}
 </style>
