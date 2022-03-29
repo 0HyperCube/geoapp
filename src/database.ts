@@ -58,8 +58,8 @@ export let user_territory_colours = writable(new Map<string, string>());
 
 let internal_provinces_count = new Map<string, number>();
 let user_economic_hubs = [] as string[];
+export let user_military_hubs = new Map<string, string[]>();
 export let economic_hub_neighbours_count = writable(0);
-let user_military_hubs = 0;
 export let provinces_count = writable(new Map<string, number>());
 export let coastal_provinces_count = writable(new Map<string, number>());
 export let player_units = writable(new Map<string, Map<string, number>>());
@@ -68,7 +68,6 @@ export let military_centres = writable(new Map<string, string>());
 export let economic_centres = writable(new Map<string, string>());
 
 export let owned_provinces_count = writable(0);
-// owned_provinces_count.subscribe;
 
 export let income = writable(0);
 
@@ -366,12 +365,17 @@ function on_load() {
 	});
 	onValue(ref(db, `special_provinces/military`), (snapshot) => {
 		let new_military_centres = new Map();
-		snapshot.forEach((user) => {
-			user.forEach((child) => {
+		user_military_hubs = new Map();
+		snapshot.forEach((current_user) => {
+			let user_hubs = [] as string[];
+			current_user.forEach((child) => {
 				let key = child.key;
 				let province = child.val();
 				new_military_centres.set(province, key);
+
+				user_hubs.push(province);
 			});
+			user_military_hubs.set(current_user.key, user_hubs);
 		});
 		military_centres.set(new_military_centres);
 	});

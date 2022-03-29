@@ -16,10 +16,11 @@
 		military_centres,
 		balance,
 		income,
+		user_military_hubs,
 	} from "./database";
-	import { province_neighbours } from "./countries";
+	import { province_centres, province_neighbours } from "./countries";
 	import Modal from "./Modal.svelte";
-	import { ceil, min, sum, unit } from "mathjs";
+	import math, { ceil, distance, min, sum, unit } from "mathjs";
 
 	export let province = "";
 	export let regions = new Map();
@@ -86,6 +87,9 @@
 		new Map<string, number>(),
 	];
 
+	let attacker_boost = 0;
+	let defender_boost = 0;
+
 	function build_economic_hub() {
 		use_action();
 		set(ref(db, `users/${$user_id}/gc`), increment(-hub_cost));
@@ -94,15 +98,35 @@
 		economic_hub = true;
 	}
 
+	function build_military_hub() {
+		use_action();
+		set(ref(db, `users/${$user_id}/gc`), increment(-hub_cost));
+		push(ref(db, `special_provinces/military/${$user_id}`), province);
+		$military_centres.set(province, null);
+		military_hub = true;
+	}
+
 	function attack() {
 		use_action();
 
 		function apply_damage(
 			attacker_units: Map<string, number>,
-			defender_units: Map<string, number>
-		): [number, Map<string, number>, {}] {
+			defender_units: Map<string, number>,
+			military_hubs: string[]
+		): [number, Map<string, number>, {}, number] {
+			let attacker_boost = 0;
+			let centre = province_centres.get(province);
+			military_hubs.forEach((location) => {
+				let location_centre = province_centres.get(location);
+				if (distance(centre, location_centre) < 100) {
+					attacker_boost += 20;
+				} else {
+					attacker_boost += 5;
+				}
+			});
+
 			if (!defender_units) {
-				return [0, new Map(), {}];
+				return [0, new Map(), {}, attacker_boost];
 			}
 
 			let defender_hp = new Map<string, number>();
@@ -122,7 +146,7 @@
 						attackers_left -= units_used;
 						defender_hp.set(
 							defending_type,
-							hp - units_used * damage_per_attacker
+							hp - units_used * damage_per_attacker * (1 + attacker_boost / 100)
 						);
 					}
 				});
@@ -143,7 +167,7 @@
 				total_hp += hp;
 			});
 
-			return [total_hp, losses, losses_update];
+			return [total_hp, losses, losses_update, attacker_boost];
 		}
 
 		let defender = owner;
@@ -152,14 +176,18 @@
 		let defender_units = $player_units.get(defender);
 
 		let [attacker_update, defender_update] = [{}, {}];
-		[defender_hp, defender_losses, defender_update] = apply_damage(
-			attacker_units,
-			defender_units
-		);
-		[attacker_hp, attacker_losses, attacker_update] = apply_damage(
-			defender_units,
-			attacker_units
-		);
+		[defender_hp, defender_losses, defender_update, attacker_boost] =
+			apply_damage(
+				attacker_units,
+				defender_units,
+				user_military_hubs.get($user_id)
+			);
+		[attacker_hp, attacker_losses, attacker_update, defender_boost] =
+			apply_damage(
+				defender_units,
+				attacker_units,
+				user_military_hubs.get(defender)
+			);
 
 		update(ref(db, `units/${$user_id}`), attacker_update);
 		update(ref(db, `units/${defender}`), defender_update);
@@ -190,6 +218,13 @@
 		attack_open = true;
 		modal_open = false;
 	}
+
+	$: attacker_has_lost_units = Array.from(attacker_losses.values()).every(
+		(value) => value === 0
+	);
+	$: defender_has_lost_units = Array.from(defender_losses.values()).every(
+		(value) => value === 0
+	);
 </script>
 
 <Modal bind:modal_open>
@@ -215,7 +250,7 @@
 			{/if}
 			{#if hub_cost <= $balance && !economic_hub && !military_hub}
 				<button on:click={build_economic_hub}>Economic hub</button>
-				<button>Military hub (not implemented)</button>
+				<button on:click={build_military_hub}>Military hub</button>
 			{/if}
 		{:else if attackable && $actions > 0}
 			<button on:click={attack}
@@ -232,19 +267,29 @@
 	</span>
 	<div slot="conent">
 		<p>Location: {province.replaceAll("_", " ")}</p>
+		<p>Attacker boost +{attacker_boost}%</p>
+		<p>Defender boost +{defender_boost}%</p>
 		<h2>Attacker losses</h2>
-		{#each [...unit_values.keys()] as unit}
-			{#if attacker_losses.get(unit)}
-				<p>{unit}: {attacker_losses.get(unit)}</p>
-			{/if}
-		{/each}
+		{#if attacker_has_lost_units}
+			{#each [...unit_values.keys()] as unit}
+				{#if attacker_losses.get(unit)}
+					<p>{unit}: {attacker_losses.get(unit)}</p>
+				{/if}
+			{/each}
+		{:else}
+			<p><i>No losses</i></p>
+		{/if}
 		<p><b>Remaining hp: {attacker_hp}</b></p>
 		<h2>Defender losses</h2>
-		{#each [...unit_values.keys()] as unit}
-			{#if defender_losses.get(unit)}
-				<p>{unit}: {defender_losses.get(unit)}</p>
-			{/if}
-		{/each}
+		{#if defender_has_lost_units}
+			{#each [...unit_values.keys()] as unit}
+				{#if defender_losses.get(unit)}
+					<p>{unit}: {defender_losses.get(unit)}</p>
+				{/if}
+			{/each}
+		{:else}
+			<p><i>No losses</i></p>
+		{/if}
 		<p><b>Remaining hp: {defender_hp}</b></p>
 	</div>
 	<span slot="action" />
