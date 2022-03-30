@@ -71,6 +71,10 @@ export let owned_provinces_count = writable(0);
 
 export let income = writable(0);
 
+export let player_username = writable("None");
+
+let usernames = new Map<string, string>();
+
 const total_actions = 10;
 
 function update_income() {
@@ -203,6 +207,10 @@ function new_user() {
 	});
 }
 
+export function get_username(id: string): string {
+	return usernames.get(id);
+}
+
 function on_login() {
 	const user_id = user.uid;
 
@@ -210,6 +218,12 @@ function on_login() {
 		let new_balance = snapshot.val() as number;
 		balance.set(new_balance);
 		if (!new_balance) new_user();
+	});
+
+	let user_username = ref(db, `usernames/${user_id}`);
+	onValue(user_username, (snapshot) => {
+		if (!snapshot.val()) set(user_username, user_id);
+		else player_username.set(snapshot.val());
 	});
 
 	let development_ref = ref(db, `development_levels/${user_id}`);
@@ -380,6 +394,12 @@ function on_load() {
 			user_military_hubs.set(current_user.key, user_hubs);
 		});
 		military_centres.set(new_military_centres);
+	});
+
+	onValue(ref(db, `usernames`), (snapshot) => {
+		snapshot.forEach((user) => {
+			usernames.set(user.key, user.val());
+		});
 	});
 }
 

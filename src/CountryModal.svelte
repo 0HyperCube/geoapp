@@ -17,6 +17,7 @@
 		balance,
 		income,
 		user_military_hubs,
+		get_username,
 	} from "./database";
 	import { province_centres, province_neighbours } from "./countries";
 	import Modal from "./Modal.svelte";
@@ -232,7 +233,7 @@
 	<div slot="conent">
 		<p>Region: {regions.get(province).name}</p>
 		<p>{coastal ? "Coastal" : "Landlocked"}</p>
-		<p>Owner: {owner ? owner : "None"}</p>
+		<p>Owner: {owner ? get_username(owner) : "None"}</p>
 		{#if economic_hub}<p>Economic hub</p>
 		{:else if military_hub}<p>Military hub</p>
 		{:else if is_owned}
