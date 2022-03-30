@@ -71,6 +71,8 @@ export let owned_provinces_count = writable(0);
 
 export let income = writable(0);
 
+const total_actions = 10;
+
 function update_income() {
 	let new_economic_bonuses = new Set(
 		user_economic_hubs
@@ -222,7 +224,7 @@ function on_login() {
 	onValue(actions_ref, (snapshot) => {
 		let new_actions = snapshot.val() as number;
 
-		if (new_actions === null) set(actions_ref, 5);
+		if (new_actions === null) set(actions_ref, total_actions);
 		else actions.set(new_actions);
 	});
 
@@ -281,7 +283,7 @@ function on_login() {
 					updates[`users/${user}/gc`] = increment(
 						(10 + development_level) * provinces * delta
 					);
-					updates[`actions/${user}`] = 5;
+					updates[`actions/${user}`] = total_actions;
 				});
 
 				update(ref(db), updates);
