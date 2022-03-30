@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { paths, regions, coastal_regions } from "./countries";
 	import { user_territory_colours, province_owners } from "./database";
-	import { abs } from "mathjs";
+	import { abs, max, min } from "mathjs";
 
 	import { RadioGroup, Radio } from "svelte-radio";
 	import Tooltip from "./Tooltip.svelte";
@@ -42,11 +42,16 @@
 	let modal_open = false;
 	let province = "";
 
+	let max_zoom = 1;
+
 	$: {
+		let x = svg_width / countries_width;
+		let y = svg_height / countries_height;
+
+		max_zoom = min(x, y);
+
 		// Scale and centre the countries if the user is not moving the viewport
 		if (!has_transformed) {
-			let x = svg_width / countries_width;
-			let y = svg_height / countries_height;
 			scale = Math.min(x, y);
 			translation_x = (svg_width - countries_width * scale) / (2 * scale);
 			translation_y = (svg_height - countries_height * scale) / (2 * scale);
@@ -82,6 +87,8 @@
 			if (event.deltaY > 0) {
 				zoom = 1 / zoom;
 			}
+
+			zoom = max(zoom, (max_zoom * 0.5) / scale);
 
 			scale *= zoom;
 
