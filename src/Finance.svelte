@@ -30,7 +30,7 @@
 </script>
 
 <table>
-	<tr><td>Balance</td><td>{$balance}gc</td></tr>
+	<tr><td><b>Balance</b></td><td><b>{$balance}gc</b></td></tr>
 	<tr><td class="spacer" /></tr>
 
 	<tr><td>Development level</td><td>{$development_level}</td></tr>
